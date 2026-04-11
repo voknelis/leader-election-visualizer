@@ -17,8 +17,8 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   electionTimeoutMin: 15,
   electionTimeoutMax: 30,
   heartbeatInterval: 5,
-  messageDelayMin: 1,
-  messageDelayMax: 3,
+  messageDelayMin: 3,
+  messageDelayMax: 4,
   messageLossProbability: 0,
   partitions: new Set(),
 }
