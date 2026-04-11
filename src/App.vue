@@ -5,6 +5,7 @@ import { useUiStore } from './stores/uiStore'
 import { useSimulationStore } from './stores/simulationStore'
 import GraphCanvas from './components/graph/GraphCanvas.vue'
 import DemoControls from './components/controls/DemoControls.vue'
+import StepPanel from './components/stepbystep/StepPanel.vue'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
@@ -42,12 +43,18 @@ onMounted(() => {
 
     <!-- Main Content -->
     <main class="flex-1 flex overflow-hidden">
-      <!-- Left controls panel (demo mode) -->
+      <!-- Left panel: Demo controls or Step-by-step -->
       <aside
         v-if="ui.mode === 'demo'"
         class="w-64 bg-slate-800 border-r border-slate-700 p-4 overflow-y-auto"
       >
         <DemoControls />
+      </aside>
+      <aside
+        v-else-if="ui.mode === 'step-by-step'"
+        class="w-80 bg-slate-800 border-r border-slate-700 overflow-y-auto"
+      >
+        <StepPanel />
       </aside>
 
       <!-- Graph area -->
