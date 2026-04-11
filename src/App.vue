@@ -9,11 +9,13 @@ import StepPanel from './components/stepbystep/StepPanel.vue'
 import NodeInspector from './components/inspector/NodeInspector.vue'
 import MessageLog from './components/inspector/MessageLog.vue'
 import TermTimeline from './components/inspector/TermTimeline.vue'
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
 const sim = useSimulation()
 provide('simulation', sim)
+useKeyboardShortcuts()
 
 onMounted(() => {
   sim.start()
@@ -41,6 +43,7 @@ onMounted(() => {
           Step-by-Step
         </button>
         <span class="text-xs text-slate-400 ml-4">Tick: {{ simStore.tick }}</span>
+        <span class="text-[10px] text-slate-600 ml-3" title="Space=pause, N/→=next step, P/←=prev, R=reset, Esc=deselect">⌨ shortcuts</span>
       </div>
     </header>
 
