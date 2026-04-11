@@ -6,6 +6,9 @@ import { useSimulationStore } from './stores/simulationStore'
 import GraphCanvas from './components/graph/GraphCanvas.vue'
 import DemoControls from './components/controls/DemoControls.vue'
 import StepPanel from './components/stepbystep/StepPanel.vue'
+import NodeInspector from './components/inspector/NodeInspector.vue'
+import MessageLog from './components/inspector/MessageLog.vue'
+import TermTimeline from './components/inspector/TermTimeline.vue'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
@@ -62,19 +65,23 @@ onMounted(() => {
         <GraphCanvas />
       </div>
 
-      <!-- Right panel: Event Log -->
-      <aside class="w-72 bg-slate-800 border-l border-slate-700 p-4 overflow-y-auto">
-        <h2 class="text-sm font-semibold text-slate-300 mb-3">Event Log</h2>
-        <div class="space-y-1 text-xs text-slate-400 max-h-full overflow-y-auto">
-          <div
-            v-for="(event, idx) in simStore.eventHistory.slice(-50).reverse()"
-            :key="idx"
-            class="py-0.5"
-          >
-            <span class="text-slate-500">[{{ event.tick }}]</span>
-            <span class="ml-1">{{ event.nodeId }}</span>
-            <span class="ml-1 text-slate-300">{{ event.type }}</span>
-          </div>
+      <!-- Right panel: Inspector + Event Log -->
+      <aside class="w-72 bg-slate-800 border-l border-slate-700 overflow-y-auto flex flex-col">
+        <!-- Node Inspector -->
+        <div class="p-4 border-b border-slate-700">
+          <NodeInspector />
+        </div>
+
+        <!-- Term Timeline -->
+        <div class="p-4 border-b border-slate-700">
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Terms</h3>
+          <TermTimeline />
+        </div>
+
+        <!-- Event Log -->
+        <div class="flex-1 p-4 overflow-y-auto">
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Event Log</h3>
+          <MessageLog />
         </div>
       </aside>
     </main>
