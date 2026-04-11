@@ -17,11 +17,60 @@ const height = ref(600)
 
 const nodeIds = computed(() => [...simStore.nodes.keys()])
 
-const { positions, resize } = useD3Layout(
+const { positions, resize, dragStart, dragMove, dragEnd } = useD3Layout(
   () => nodeIds.value,
   () => width.value,
   () => height.value,
 )
+
+// --- Drag handling ---
+const dragging = ref(false)
+let dragMoved = false
+let dragStartX = 0
+let dragStartY = 0
+
+function toSvgCoords(e: MouseEvent): { x: number; y: number } {
+  const svg = svgRef.value
+  if (!svg) return { x: e.clientX, y: e.clientY }
+  const pt = svg.createSVGPoint()
+  pt.x = e.clientX
+  pt.y = e.clientY
+  const ctm = svg.getScreenCTM()
+  if (!ctm) return { x: e.clientX, y: e.clientY }
+  const svgPt = pt.matrixTransform(ctm.inverse())
+  return { x: svgPt.x, y: svgPt.y }
+}
+
+function handleNodeMousedown(id: string, e: MouseEvent) {
+  e.preventDefault()
+  dragging.value = true
+  dragMoved = false
+  dragStartX = e.clientX
+  dragStartY = e.clientY
+  dragStart(id)
+}
+
+function handleMousemove(e: MouseEvent) {
+  if (!dragging.value) return
+  const dx = e.clientX - dragStartX
+  const dy = e.clientY - dragStartY
+  if (dx * dx + dy * dy > 9) dragMoved = true
+  const { x, y } = toSvgCoords(e)
+  dragMove(x, y)
+}
+
+function handleMouseup() {
+  if (!dragging.value) return
+  dragging.value = false
+  dragEnd()
+}
+
+function handleNodeClick(id: string) {
+  // Only select if the mouse didn't move (not a drag)
+  if (!dragMoved) {
+    ui.selectNode(id)
+  }
+}
 
 // Generate all unique edges between nodes
 const edges = computed(() => {
@@ -70,6 +119,9 @@ onUnmounted(() => {
       :width="width"
       :height="height"
       class="w-full h-full"
+      @mousemove="handleMousemove"
+      @mouseup="handleMouseup"
+      @mouseleave="handleMouseup"
     >
       <!-- Edges -->
       <EdgeLine
@@ -100,7 +152,8 @@ onUnmounted(() => {
         :y="positions.get(id)?.y ?? 0"
         :selected="ui.selectedNodeId === id"
         :dimmed="ui.highlightedNodes.length > 0 && !ui.highlightedNodes.includes(id)"
-        @click="ui.selectNode(id)"
+        @click="handleNodeClick(id)"
+        @mousedown="handleNodeMousedown(id, $event)"
       />
     </svg>
 

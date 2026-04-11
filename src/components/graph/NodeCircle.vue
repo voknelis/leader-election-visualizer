@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   click: [id: string]
+  mousedown: [e: MouseEvent]
 }>()
 
 const simStore = useSimulationStore()
@@ -79,8 +80,9 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
   <g
     :transform="`translate(${x}, ${y})`"
     :opacity="opacity"
-    class="cursor-pointer"
+    class="cursor-grab active:cursor-grabbing"
     @click="emit('click', node.id)"
+    @mousedown="emit('mousedown', $event)"
   >
     <!-- Selection ring -->
     <circle

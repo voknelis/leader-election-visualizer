@@ -95,11 +95,40 @@ export function useD3Layout(
     }
   }
 
+  // --- Drag support ---
+
+  let draggedNode: SimNode | null = null
+
+  function dragStart(id: NodeId) {
+    draggedNode = nodes.find(n => n.id === id) ?? null
+    if (draggedNode && simulation) {
+      simulation.alphaTarget(0.1).restart()
+      draggedNode.fx = draggedNode.x
+      draggedNode.fy = draggedNode.y
+    }
+  }
+
+  function dragMove(x: number, y: number) {
+    if (draggedNode) {
+      draggedNode.fx = x
+      draggedNode.fy = y
+    }
+  }
+
+  function dragEnd() {
+    if (draggedNode && simulation) {
+      simulation.alphaTarget(0)
+      draggedNode.fx = null
+      draggedNode.fy = null
+      draggedNode = null
+    }
+  }
+
   watch(nodeIds, (ids) => updateNodes(ids), { immediate: true })
 
   onUnmounted(() => {
     simulation?.stop()
   })
 
-  return { positions, resize, updateNodes }
+  return { positions, resize, updateNodes, dragStart, dragMove, dragEnd }
 }
