@@ -7,12 +7,10 @@ import type { useSimulation } from './useSimulation'
 export function useKeyboardShortcuts() {
   const ui = useUiStore()
   const stepStore = useStepStore()
-  const sim = inject<ReturnType<typeof useSimulation>>('simulation')
-
-  let runner: ReturnType<typeof useScenarioRunner> | null = null
+  const sim = inject<ReturnType<typeof useSimulation>>('simulation')!
+  const runner = useScenarioRunner()
 
   function handler(e: KeyboardEvent) {
-    // Don't capture when typing in inputs
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return
 
     switch (e.code) {
@@ -20,26 +18,22 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         ui.togglePause()
         break
-      case 'KeyN':
       case 'ArrowRight':
         if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
           e.preventDefault()
-          if (!runner) runner = useScenarioRunner()
           runner.nextStep()
         }
         break
-      case 'KeyP':
       case 'ArrowLeft':
         if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
           e.preventDefault()
-          if (!runner) runner = useScenarioRunner()
           runner.prevStep()
         }
         break
       case 'KeyR':
-        if (e.ctrlKey || e.metaKey) return // Don't intercept browser refresh
+        if (e.ctrlKey || e.metaKey) return
         e.preventDefault()
-        sim?.reset(Math.floor(Math.random() * 10000))
+        sim.reset(Math.floor(Math.random() * 10000))
         break
       case 'Escape':
         ui.selectNode(null)

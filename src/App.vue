@@ -50,8 +50,8 @@ onMounted(() => {
           <div class="hidden group-hover:block absolute right-0 top-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl p-3 z-50 w-52">
             <div class="text-xs text-slate-300 space-y-1.5">
               <div class="flex justify-between"><span class="text-slate-400">Pause/Resume</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
-              <div class="flex justify-between"><span class="text-slate-400">Next step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">N / →</kbd></div>
-              <div class="flex justify-between"><span class="text-slate-400">Prev step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">P / ←</kbd></div>
+              <div class="flex justify-between"><span class="text-slate-400">Next step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">→</kbd></div>
+              <div class="flex justify-between"><span class="text-slate-400">Prev step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">←</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Reset</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">R</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Deselect</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Esc</kbd></div>
             </div>
