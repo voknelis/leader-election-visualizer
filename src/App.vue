@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, provide } from 'vue'
 import { useSimulation } from './composables/useSimulation'
 import { useUiStore } from './stores/uiStore'
 import { useSimulationStore } from './stores/simulationStore'
+import GraphCanvas from './components/graph/GraphCanvas.vue'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
 const sim = useSimulation()
+provide('simulation', sim)
 
 onMounted(() => {
   sim.start()
@@ -39,18 +41,9 @@ onMounted(() => {
 
     <!-- Main Content -->
     <main class="flex-1 flex overflow-hidden">
-      <!-- Graph area (placeholder) -->
-      <div class="flex-1 flex items-center justify-center">
-        <div class="text-slate-500 text-sm">
-          <p>Nodes: {{ simStore.nodes.size }}</p>
-          <p class="mt-1">
-            Leaders:
-            {{ [...simStore.nodes.values()].filter(n => n.state === 'leader').map(n => n.id).join(', ') || 'none' }}
-          </p>
-          <p class="mt-1">
-            Messages in-flight: {{ simStore.messages.length }}
-          </p>
-        </div>
+      <!-- Graph area -->
+      <div class="flex-1">
+        <GraphCanvas />
       </div>
 
       <!-- Side panel placeholder -->
