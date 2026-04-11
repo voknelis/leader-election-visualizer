@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { RaftNodeState } from '../../types/raft'
 import { NodeState } from '../../types/raft'
+import { useSimulationStore } from '../../stores/simulationStore'
 
 const props = defineProps<{
   node: RaftNodeState
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   click: [id: string]
 }>()
 
+const simStore = useSimulationStore()
 const radius = 32
 
 const stateColor = computed(() => {
@@ -37,42 +39,37 @@ const stateLabel = computed(() => {
   }
 })
 
-/** Election timeout arc — shows remaining time as a depleting arc */
+function describeArc(ratio: number): string {
+  if (ratio <= 0 || ratio > 1) return ''
+  const startAngle = -Math.PI / 2
+  const endAngle = startAngle + ratio * 2 * Math.PI
+  const r = radius + 6
+  const x1 = r * Math.cos(startAngle)
+  const y1 = r * Math.sin(startAngle)
+  const x2 = r * Math.cos(endAngle)
+  const y2 = r * Math.sin(endAngle)
+  const largeArc = ratio > 0.5 ? 1 : 0
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
+}
+
+/** Smooth election timeout arc — interpolates with frameFraction */
 const timeoutArc = computed(() => {
   if (props.node.state === NodeState.CRASHED || props.node.state === NodeState.LEADER) return ''
-  const ratio = props.node.electionTimeoutTicks / props.node.electionTimeoutMax
-  if (ratio <= 0 || ratio > 1) return ''
-
-  const startAngle = -Math.PI / 2
-  const endAngle = startAngle + ratio * 2 * Math.PI
-  const r = radius + 6
-
-  const x1 = r * Math.cos(startAngle)
-  const y1 = r * Math.sin(startAngle)
-  const x2 = r * Math.cos(endAngle)
-  const y2 = r * Math.sin(endAngle)
-  const largeArc = ratio > 0.5 ? 1 : 0
-
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
+  const max = props.node.electionTimeoutMax
+  if (max <= 0) return ''
+  // Subtract frameFraction for smooth depletion between ticks
+  const smoothTicks = Math.max(0, props.node.electionTimeoutTicks - simStore.frameFraction)
+  const ratio = smoothTicks / max
+  return describeArc(ratio)
 })
 
-/** Heartbeat pulse for leaders */
+/** Smooth heartbeat arc for leaders */
 const heartbeatArc = computed(() => {
   if (props.node.state !== NodeState.LEADER) return ''
-  const ratio = props.node.heartbeatTimeoutTicks / 5 // heartbeat interval
-  if (ratio <= 0 || ratio > 1) return ''
-
-  const startAngle = -Math.PI / 2
-  const endAngle = startAngle + ratio * 2 * Math.PI
-  const r = radius + 6
-
-  const x1 = r * Math.cos(startAngle)
-  const y1 = r * Math.sin(startAngle)
-  const x2 = r * Math.cos(endAngle)
-  const y2 = r * Math.sin(endAngle)
-  const largeArc = ratio > 0.5 ? 1 : 0
-
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
+  const interval = 5
+  const smoothTicks = Math.max(0, props.node.heartbeatTimeoutTicks - simStore.frameFraction)
+  const ratio = smoothTicks / interval
+  return describeArc(ratio)
 })
 
 const opacity = computed(() => props.dimmed ? 0.25 : 1)
@@ -82,7 +79,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
   <g
     :transform="`translate(${x}, ${y})`"
     :opacity="opacity"
-    class="cursor-pointer transition-opacity duration-200"
+    class="cursor-pointer"
     @click="emit('click', node.id)"
   >
     <!-- Selection ring -->
@@ -98,7 +95,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
     <!-- Main circle -->
     <circle
       :r="radius"
-      :fill="node.state === 'crashed' ? '#1e293b' : '#1e293b'"
+      fill="#1e293b"
       :stroke="stateColor"
       stroke-width="3"
     />

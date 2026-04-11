@@ -10,6 +10,11 @@ export const useSimulationStore = defineStore('simulation', () => {
   const events = shallowRef<RaftEvent[]>([])
   /** Accumulated event history for the log panel */
   const eventHistory = ref<RaftEvent[]>([])
+  /**
+   * Fraction (0–1) of elapsed time between the last engine tick and the next.
+   * Updated on every rAF frame for smooth interpolation of visual elements.
+   */
+  const frameFraction = ref(0)
 
   function updateFromSnapshot(snapshot: {
     tick: number
@@ -37,6 +42,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     messages,
     events,
     eventHistory,
+    frameFraction,
     updateFromSnapshot,
     clearHistory,
   }

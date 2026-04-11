@@ -61,6 +61,9 @@ export function useSimulation() {
         }
       }
     }
+
+    // Always update frame fraction for smooth interpolation (every rAF frame)
+    simStore.frameFraction = msPerTick > 0 ? Math.min(tickAccumulator / msPerTick, 1) : 0
   }
 
   function start() {
