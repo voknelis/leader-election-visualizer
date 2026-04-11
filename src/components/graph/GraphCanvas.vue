@@ -134,9 +134,10 @@ onUnmounted(() => {
         :partitioned="isPartitioned(edge.from, edge.to)"
       />
 
-      <!-- Messages in flight -->
+      <!-- Messages in flight (skip if either endpoint was removed) -->
       <MessagePacket
         v-for="msg in simStore.messages"
+        v-show="positions.has(msg.from) && positions.has(msg.to)"
         :key="msg.id"
         :message="msg"
         :from-pos="positions.get(msg.from) ?? { x: 0, y: 0 }"
