@@ -4,6 +4,7 @@ import { useSimulation } from './composables/useSimulation'
 import { useUiStore } from './stores/uiStore'
 import { useSimulationStore } from './stores/simulationStore'
 import GraphCanvas from './components/graph/GraphCanvas.vue'
+import DemoControls from './components/controls/DemoControls.vue'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
@@ -41,18 +42,26 @@ onMounted(() => {
 
     <!-- Main Content -->
     <main class="flex-1 flex overflow-hidden">
+      <!-- Left controls panel (demo mode) -->
+      <aside
+        v-if="ui.mode === 'demo'"
+        class="w-64 bg-slate-800 border-r border-slate-700 p-4 overflow-y-auto"
+      >
+        <DemoControls />
+      </aside>
+
       <!-- Graph area -->
       <div class="flex-1">
         <GraphCanvas />
       </div>
 
-      <!-- Side panel placeholder -->
+      <!-- Right panel: Event Log -->
       <aside class="w-72 bg-slate-800 border-l border-slate-700 p-4 overflow-y-auto">
         <h2 class="text-sm font-semibold text-slate-300 mb-3">Event Log</h2>
         <div class="space-y-1 text-xs text-slate-400 max-h-full overflow-y-auto">
           <div
-            v-for="event in simStore.eventHistory.slice(-50).reverse()"
-            :key="event.tick + event.type + event.nodeId"
+            v-for="(event, idx) in simStore.eventHistory.slice(-50).reverse()"
+            :key="idx"
             class="py-0.5"
           >
             <span class="text-slate-500">[{{ event.tick }}]</span>
