@@ -7,11 +7,11 @@ import type { EngineAction } from '../types/scenario'
 import type { Scenario } from '../types/scenario'
 import type { useSimulation } from './useSimulation'
 
-export function useScenarioRunner() {
+export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   const stepStore = useStepStore()
   const ui = useUiStore()
   const simStore = useSimulationStore()
-  const sim = inject<ReturnType<typeof useSimulation>>('simulation')!
+  const sim = simParam ?? inject<ReturnType<typeof useSimulation>>('simulation')!
 
   function loadScenario(scenario: Scenario) {
     stepStore.loadScenario(scenario)

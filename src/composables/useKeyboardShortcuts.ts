@@ -1,14 +1,15 @@
-import { onMounted, onUnmounted, inject } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useUiStore } from '../stores/uiStore'
 import { useStepStore } from '../stores/stepStore'
-import { useScenarioRunner } from './useScenarioRunner'
 import type { useSimulation } from './useSimulation'
+import type { useScenarioRunner } from './useScenarioRunner'
 
-export function useKeyboardShortcuts() {
+export function useKeyboardShortcuts(
+  sim: ReturnType<typeof useSimulation>,
+  runner: ReturnType<typeof useScenarioRunner>,
+) {
   const ui = useUiStore()
   const stepStore = useStepStore()
-  const sim = inject<ReturnType<typeof useSimulation>>('simulation')!
-  const runner = useScenarioRunner()
 
   function handler(e: KeyboardEvent) {
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return

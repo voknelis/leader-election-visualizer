@@ -10,12 +10,14 @@ import NodeInspector from './components/inspector/NodeInspector.vue'
 import MessageLog from './components/inspector/MessageLog.vue'
 import TermTimeline from './components/inspector/TermTimeline.vue'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
+import { useScenarioRunner } from './composables/useScenarioRunner'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
 const sim = useSimulation()
 provide('simulation', sim)
-useKeyboardShortcuts()
+const runner = useScenarioRunner(sim)
+useKeyboardShortcuts(sim, runner)
 
 onMounted(() => {
   sim.start()
