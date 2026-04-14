@@ -41,28 +41,39 @@ function toSvgCoords(e: MouseEvent): { x: number; y: number } {
   return { x: svgPt.x, y: svgPt.y }
 }
 
+let pendingDragId: string | null = null
+
 function handleNodeMousedown(id: string, e: MouseEvent) {
   e.preventDefault()
   dragging.value = true
   dragMoved = false
   dragStartX = e.clientX
   dragStartY = e.clientY
-  dragStart(id)
+  pendingDragId = id
 }
 
 function handleMousemove(e: MouseEvent) {
   if (!dragging.value) return
   const dx = e.clientX - dragStartX
   const dy = e.clientY - dragStartY
-  if (dx * dx + dy * dy > 9) dragMoved = true
-  const { x, y } = toSvgCoords(e)
-  dragMove(x, y)
+  if (!dragMoved && dx * dx + dy * dy > 9) {
+    dragMoved = true
+    if (pendingDragId) {
+      dragStart(pendingDragId)
+      pendingDragId = null
+    }
+  }
+  if (dragMoved) {
+    const { x, y } = toSvgCoords(e)
+    dragMove(x, y)
+  }
 }
 
 function handleMouseup() {
   if (!dragging.value) return
   dragging.value = false
-  dragEnd()
+  pendingDragId = null
+  if (dragMoved) dragEnd()
 }
 
 function handleNodeClick(id: string) {
