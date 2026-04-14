@@ -17,6 +17,7 @@ const simStore = useSimulationStore()
 const sim = useSimulation()
 provide('simulation', sim)
 const runner = useScenarioRunner(sim)
+provide('scenarioRunner', runner)
 useKeyboardShortcuts(sim, runner)
 
 onMounted(() => {

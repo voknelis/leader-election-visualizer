@@ -8,6 +8,7 @@ import type { Scenario } from '../types/scenario'
 import type { useSimulation } from './useSimulation'
 
 const AUTO_PLAY_DELAY_MS = 1500
+const AUTO_REPLAY_DELAY_MS = 2500
 
 export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   const stepStore = useStepStore()
@@ -16,6 +17,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   const sim = simParam ?? inject<ReturnType<typeof useSimulation>>('simulation')!
 
   let autoPlayTimer: ReturnType<typeof setTimeout> | null = null
+  let autoReplayTimer: ReturnType<typeof setTimeout> | null = null
 
   function cancelAutoPlayTimer() {
     if (autoPlayTimer !== null) {
@@ -24,13 +26,25 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     }
   }
 
-  function stopAutoPlay() {
+  function cancelAutoReplayTimer() {
+    if (autoReplayTimer !== null) {
+      clearTimeout(autoReplayTimer)
+      autoReplayTimer = null
+    }
+  }
+
+  function cancelAllTimers() {
     cancelAutoPlayTimer()
+    cancelAutoReplayTimer()
+  }
+
+  function stopAutoPlay() {
+    cancelAllTimers()
     stepStore.isAutoPlaying = false
   }
 
   function loadScenario(scenario: Scenario) {
-    cancelAutoPlayTimer()
+    cancelAllTimers()
     stepStore.loadScenario(scenario)
     ui.setMode('step-by-step')
     ui.isPaused = true
@@ -80,7 +94,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   }
 
   function replayCurrentStep() {
-    cancelAutoPlayTimer()
+    cancelAllTimers()
     replayStep(stepStore.currentStepIndex)
   }
 
@@ -89,7 +103,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       stopAutoPlay()
       return
     }
-    cancelAutoPlayTimer()
+    cancelAllTimers()
     stepStore.nextStep()
     const idx = stepStore.currentStepIndex
     if (stepStore.visitedSteps.has(idx)) {
@@ -101,7 +115,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
 
   function prevStep() {
     if (stepStore.isFirstStep) return
-    cancelAutoPlayTimer()
+    cancelAllTimers()
     stepStore.prevStep()
     replayStep(stepStore.currentStepIndex)
   }
@@ -113,7 +127,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       return
     }
     if (!stepStore.visitedSteps.has(targetIndex)) return
-    cancelAutoPlayTimer()
+    cancelAllTimers()
     stepStore.goToStep(targetIndex)
     replayStep(targetIndex)
   }
@@ -123,6 +137,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       stopAutoPlay()
     } else {
       if (stepStore.isLastStep) return
+      cancelAutoReplayTimer()
       stepStore.isAutoPlaying = true
       scheduleAutoAdvanceIfSettled()
     }
@@ -156,13 +171,33 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     scheduleAutoAdvanceIfSettled()
   }
 
-  /** If the current step has no ongoing work, queue the next advance immediately. */
+  /** Step is "settled" when autoRun has finished AND no condition-wait is active. */
+  function isStepSettled() {
+    if (stepStore.autoRunTicksRemaining > 0) return false
+    const step = stepStore.currentStep
+    if (step?.advanceCondition && !ui.isPaused) return false
+    return true
+  }
+
+  /** If the current step is already settled, queue the next advance. */
   function scheduleAutoAdvanceIfSettled() {
     if (!stepStore.isAutoPlaying) return
+    if (isStepSettled()) scheduleAutoAdvance()
+  }
+
+  /** Loop the current step's animation when user is not auto-playing. */
+  function scheduleAutoReplay() {
+    cancelAutoReplayTimer()
+    if (stepStore.isAutoPlaying) return
     const step = stepStore.currentStep
     if (!step) return
-    const hasWork = (step.autoRunTicks ?? 0) > 0 || !!step.advanceCondition
-    if (!hasWork) scheduleAutoAdvance()
+    const hasAnimation = (step.autoRunTicks ?? 0) > 0 || !!step.advanceCondition
+    if (!hasAnimation) return
+    autoReplayTimer = setTimeout(() => {
+      autoReplayTimer = null
+      if (stepStore.isAutoPlaying) return
+      replayStep(stepStore.currentStepIndex)
+    }, AUTO_REPLAY_DELAY_MS)
   }
 
   function applyAction(action: EngineAction) {
@@ -224,16 +259,18 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       if (stepStore.currentStep.advanceCondition(snap)) {
         ui.isPaused = true
         if (stepStore.isAutoPlaying) scheduleAutoAdvance()
+        else scheduleAutoReplay()
       }
     },
   )
 
-  // autoRunTicks countdown settled: queue auto-advance
+  // autoRunTicks countdown settled: queue auto-advance or auto-replay
   watch(
     () => stepStore.autoRunTicksRemaining,
     (remaining, prev) => {
-      if (remaining === 0 && prev && prev > 0 && stepStore.isAutoPlaying) {
-        scheduleAutoAdvance()
+      if (remaining === 0 && prev && prev > 0) {
+        if (stepStore.isAutoPlaying) scheduleAutoAdvance()
+        else scheduleAutoReplay()
       }
     },
   )

@@ -23,7 +23,7 @@ export function useSimulation() {
   }))
 
   /** Snapshots saved at each step boundary for Prev navigation */
-  const stepSnapshots = ref<Map<number, EngineSnapshot>>(new Map())
+  const stepSnapshots = ref<Map<number, { snap: EngineSnapshot; historyLength: number }>>(new Map())
 
   let animFrameId: number | null = null
   let lastTime = 0
@@ -135,13 +135,17 @@ export function useSimulation() {
   }
 
   function saveStepSnapshot(stepIndex: number) {
-    stepSnapshots.value.set(stepIndex, engine.value.saveSnapshot())
+    stepSnapshots.value.set(stepIndex, {
+      snap: engine.value.saveSnapshot(),
+      historyLength: simStore.eventHistory.length,
+    })
   }
 
   function restoreStepSnapshot(stepIndex: number): boolean {
-    const snap = stepSnapshots.value.get(stepIndex)
-    if (snap) {
-      engine.value.restoreSnapshot(snap)
+    const entry = stepSnapshots.value.get(stepIndex)
+    if (entry) {
+      engine.value.restoreSnapshot(entry.snap)
+      simStore.truncateHistory(entry.historyLength)
       syncSnapshot()
       return true
     }

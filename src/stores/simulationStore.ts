@@ -36,6 +36,12 @@ export const useSimulationStore = defineStore('simulation', () => {
     eventHistory.value = []
   }
 
+  function truncateHistory(length: number) {
+    if (length < eventHistory.value.length) {
+      eventHistory.value = eventHistory.value.slice(0, length)
+    }
+  }
+
   return {
     tick,
     nodes,
@@ -45,5 +51,6 @@ export const useSimulationStore = defineStore('simulation', () => {
     frameFraction,
     updateFromSnapshot,
     clearHistory,
+    truncateHistory,
   }
 })

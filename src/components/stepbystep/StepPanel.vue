@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
 import { useUiStore } from '../../stores/uiStore'
-import { useScenarioRunner } from '../../composables/useScenarioRunner'
+import type { useScenarioRunner } from '../../composables/useScenarioRunner'
 import ScenarioSelector from './ScenarioSelector.vue'
 import type { Scenario } from '../../types/scenario'
 
@@ -11,7 +11,7 @@ marked.setOptions({ breaks: true, gfm: true })
 
 const stepStore = useStepStore()
 const ui = useUiStore()
-const runner = useScenarioRunner()
+const runner = inject<ReturnType<typeof useScenarioRunner>>('scenarioRunner')!
 
 const progressPercent = computed(() => {
   if (stepStore.totalSteps === 0) return 0
@@ -31,7 +31,11 @@ const autoRunProgress = computed(() => {
 
 const isAutoAdvancing = computed(() => stepStore.autoRunTicksRemaining > 0)
 const isAwaitingCondition = computed(
-  () => !isAutoAdvancing.value && !!stepStore.currentStep?.advanceCondition && !ui.isPaused,
+  () =>
+    stepStore.isAutoPlaying &&
+    !isAutoAdvancing.value &&
+    !!stepStore.currentStep?.advanceCondition &&
+    !ui.isPaused,
 )
 
 function handleSelectScenario(scenario: Scenario) {
@@ -57,13 +61,15 @@ function handleClose() {
     <div v-else class="flex flex-col h-full">
       <!-- Header -->
       <div class="p-4 border-b border-slate-700">
-        <div class="flex items-center justify-between mb-1">
-          <h2 class="text-sm font-semibold text-slate-200">{{ stepStore.currentScenario.title }}</h2>
-          <button
-            class="text-xs text-slate-500 hover:text-slate-300"
-            @click="handleClose"
-          >✕ Close</button>
-        </div>
+        <button
+          class="mb-3 flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded transition-colors"
+          title="Back to scenario list"
+          @click="handleClose"
+        >
+          <span>←</span>
+          <span>All scenarios</span>
+        </button>
+        <h2 class="text-sm font-semibold text-slate-200">{{ stepStore.currentScenario.title }}</h2>
         <div class="w-full bg-slate-700 rounded-full h-1.5 mt-2">
           <div
             class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"

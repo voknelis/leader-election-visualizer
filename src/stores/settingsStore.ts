@@ -11,7 +11,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const electionTimeoutMax = ref(30)
   const heartbeatInterval = ref(5)
   /** Milliseconds per tick at 1x speed */
-  const msPerTick = ref(200)
+  const msPerTick = ref(400)
 
   return {
     nodeCount,
