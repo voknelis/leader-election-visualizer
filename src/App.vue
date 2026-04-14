@@ -11,6 +11,7 @@ import MessageLog from './components/inspector/MessageLog.vue'
 import TermTimeline from './components/inspector/TermTimeline.vue'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { useScenarioRunner } from './composables/useScenarioRunner'
+import { useModeSessions } from './composables/useModeSessions'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
@@ -19,6 +20,7 @@ provide('simulation', sim)
 const runner = useScenarioRunner(sim)
 provide('scenarioRunner', runner)
 useKeyboardShortcuts(sim, runner)
+useModeSessions(sim, runner)
 
 onMounted(() => {
   sim.start()

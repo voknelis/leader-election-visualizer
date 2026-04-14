@@ -191,5 +191,6 @@ export function useSimulation() {
     reset,
     saveStepSnapshot,
     restoreStepSnapshot,
+    syncSnapshot,
   }
 }

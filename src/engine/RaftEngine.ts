@@ -177,10 +177,19 @@ export class RaftEngine {
   /** Restore engine state from a snapshot */
   restoreSnapshot(snap: EngineSnapshot): void {
     this.currentTick = snap.tick
-    for (const nodeSnap of snap.nodes) {
-      const node = this.nodes.get(nodeSnap.id)
-      if (node) node.restoreSnapshot(nodeSnap)
+    const snapIds = new Set(snap.nodes.map(n => n.id))
+    for (const id of [...this.nodes.keys()]) {
+      if (!snapIds.has(id)) this.nodes.delete(id)
     }
+    for (const nodeSnap of snap.nodes) {
+      let node = this.nodes.get(nodeSnap.id)
+      if (!node) {
+        this.addNode(nodeSnap.id)
+        node = this.nodes.get(nodeSnap.id)!
+      }
+      node.restoreSnapshot(nodeSnap)
+    }
+    this.updatePeers()
     this.bus.restore(snap.messages)
     this.partition.fromSet(new Set(snap.partitions))
   }
