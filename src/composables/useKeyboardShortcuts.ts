@@ -17,7 +17,11 @@ export function useKeyboardShortcuts(
     switch (e.code) {
       case 'Space':
         e.preventDefault()
-        ui.togglePause()
+        if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
+          runner.toggleAutoPlay()
+        } else {
+          ui.togglePause()
+        }
         break
       case 'ArrowRight':
         if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
@@ -34,7 +38,11 @@ export function useKeyboardShortcuts(
       case 'KeyR':
         if (e.ctrlKey || e.metaKey) return
         e.preventDefault()
-        sim.reset(Math.floor(Math.random() * 10000))
+        if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
+          runner.replayCurrentStep()
+        } else {
+          sim.reset(Math.floor(Math.random() * 10000))
+        }
         break
       case 'Escape':
         ui.selectNode(null)

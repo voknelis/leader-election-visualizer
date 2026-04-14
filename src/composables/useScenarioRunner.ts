@@ -7,67 +7,162 @@ import type { EngineAction } from '../types/scenario'
 import type { Scenario } from '../types/scenario'
 import type { useSimulation } from './useSimulation'
 
+const AUTO_PLAY_DELAY_MS = 1500
+
 export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   const stepStore = useStepStore()
   const ui = useUiStore()
   const simStore = useSimulationStore()
   const sim = simParam ?? inject<ReturnType<typeof useSimulation>>('simulation')!
 
+  let autoPlayTimer: ReturnType<typeof setTimeout> | null = null
+
+  function cancelAutoPlayTimer() {
+    if (autoPlayTimer !== null) {
+      clearTimeout(autoPlayTimer)
+      autoPlayTimer = null
+    }
+  }
+
+  function stopAutoPlay() {
+    cancelAutoPlayTimer()
+    stepStore.isAutoPlaying = false
+  }
+
   function loadScenario(scenario: Scenario) {
+    cancelAutoPlayTimer()
     stepStore.loadScenario(scenario)
     ui.setMode('step-by-step')
     ui.isPaused = true
 
-    // Reset engine and apply first step
     sim.reset(42)
     applyStep(0)
   }
 
-  function applyStep(stepIndex: number) {
+  /** Visual side of a step: highlights, autoRun / advanceCondition gating. */
+  function runStepPostActions(stepIndex: number) {
     const step = stepStore.currentScenario?.steps[stepIndex]
     if (!step) return
 
-    // Save snapshot at this step boundary
-    sim.saveStepSnapshot(stepIndex)
-
-    // Apply engine actions
-    if (step.engineActions) {
-      for (const action of step.engineActions) {
-        applyAction(action)
-      }
-    }
-
-    // Set highlights
     ui.highlightedNodes = step.highlightNodes ?? []
 
-    // Handle autoRunTicks
     if (step.autoRunTicks) {
       stepStore.autoRunTicksRemaining = step.autoRunTicks
       ui.isPaused = false
     } else if (step.advanceCondition) {
-      // Let it run until condition is met
       ui.isPaused = false
     } else {
       ui.isPaused = true
     }
   }
 
+  /** Enter a step for the first time: run engine actions, snapshot the stable starting state, then drive the step. */
+  function applyStep(stepIndex: number) {
+    const step = stepStore.currentScenario?.steps[stepIndex]
+    if (!step) return
+    if (step.engineActions) {
+      for (const action of step.engineActions) {
+        applyAction(action)
+      }
+    }
+    // Snapshot captures the post-action starting state so replay/jump is idempotent.
+    sim.saveStepSnapshot(stepIndex)
+    stepStore.markVisited(stepIndex)
+    runStepPostActions(stepIndex)
+  }
+
+  /** Replay a step: restore its starting snapshot then drive the step (skip re-running actions). */
+  function replayStep(stepIndex: number) {
+    const restored = sim.restoreStepSnapshot(stepIndex)
+    if (!restored) return false
+    runStepPostActions(stepIndex)
+    return true
+  }
+
+  function replayCurrentStep() {
+    cancelAutoPlayTimer()
+    replayStep(stepStore.currentStepIndex)
+  }
+
   function nextStep() {
-    if (stepStore.isLastStep) return
+    if (stepStore.isLastStep) {
+      stopAutoPlay()
+      return
+    }
+    cancelAutoPlayTimer()
     stepStore.nextStep()
-    applyStep(stepStore.currentStepIndex)
+    const idx = stepStore.currentStepIndex
+    if (stepStore.visitedSteps.has(idx)) {
+      replayStep(idx)
+    } else {
+      applyStep(idx)
+    }
   }
 
   function prevStep() {
     if (stepStore.isFirstStep) return
-    const targetIdx = stepStore.currentStepIndex - 1
-    // Restore snapshot from previous step
-    const restored = sim.restoreStepSnapshot(targetIdx)
-    if (restored) {
-      stepStore.prevStep()
-      ui.highlightedNodes = stepStore.currentStep?.highlightNodes ?? []
-      ui.isPaused = true
+    cancelAutoPlayTimer()
+    stepStore.prevStep()
+    replayStep(stepStore.currentStepIndex)
+  }
+
+  function jumpToStep(targetIndex: number) {
+    if (targetIndex < 0 || targetIndex >= stepStore.totalSteps) return
+    if (targetIndex === stepStore.currentStepIndex) {
+      replayCurrentStep()
+      return
     }
+    if (!stepStore.visitedSteps.has(targetIndex)) return
+    cancelAutoPlayTimer()
+    stepStore.goToStep(targetIndex)
+    replayStep(targetIndex)
+  }
+
+  function toggleAutoPlay() {
+    if (stepStore.isAutoPlaying) {
+      stopAutoPlay()
+    } else {
+      if (stepStore.isLastStep) return
+      stepStore.isAutoPlaying = true
+      scheduleAutoAdvanceIfSettled()
+    }
+  }
+
+  function scheduleAutoAdvance() {
+    cancelAutoPlayTimer()
+    autoPlayTimer = setTimeout(() => {
+      autoPlayTimer = null
+      if (!stepStore.isAutoPlaying) return
+      if (stepStore.isLastStep) {
+        stopAutoPlay()
+        return
+      }
+      nextStepFromAutoPlay()
+    }, AUTO_PLAY_DELAY_MS)
+  }
+
+  function nextStepFromAutoPlay() {
+    if (stepStore.isLastStep) {
+      stopAutoPlay()
+      return
+    }
+    stepStore.nextStep()
+    const idx = stepStore.currentStepIndex
+    if (stepStore.visitedSteps.has(idx)) {
+      replayStep(idx)
+    } else {
+      applyStep(idx)
+    }
+    scheduleAutoAdvanceIfSettled()
+  }
+
+  /** If the current step has no ongoing work, queue the next advance immediately. */
+  function scheduleAutoAdvanceIfSettled() {
+    if (!stepStore.isAutoPlaying) return
+    const step = stepStore.currentStep
+    if (!step) return
+    const hasWork = (step.autoRunTicks ?? 0) > 0 || !!step.advanceCondition
+    if (!hasWork) scheduleAutoAdvance()
   }
 
   function applyAction(action: EngineAction) {
@@ -78,7 +173,6 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       case 'crash_node': {
         const nodeId = action.payload.nodeId as string
         if (nodeId === '__leader__') {
-          // Find and crash current leader
           for (const [id, node] of simStore.nodes) {
             if (node.state === NodeState.LEADER) {
               sim.crashNode(id)
@@ -104,7 +198,6 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
         break
       }
       case 'set_config':
-        // Would need engine reconfiguration — skip for now
         break
       case 'add_node':
         sim.addNode()
@@ -115,11 +208,12 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     }
   }
 
-  // Watch for advanceCondition being met
+  // advanceCondition watcher: pause when condition is met, optionally queue auto-advance
   watch(
     () => simStore.tick,
     () => {
       if (ui.mode !== 'step-by-step' || !stepStore.currentStep?.advanceCondition) return
+      if (ui.isPaused) return
       const snap = {
         tick: simStore.tick,
         nodes: simStore.nodes,
@@ -129,6 +223,17 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       }
       if (stepStore.currentStep.advanceCondition(snap)) {
         ui.isPaused = true
+        if (stepStore.isAutoPlaying) scheduleAutoAdvance()
+      }
+    },
+  )
+
+  // autoRunTicks countdown settled: queue auto-advance
+  watch(
+    () => stepStore.autoRunTicksRemaining,
+    (remaining, prev) => {
+      if (remaining === 0 && prev && prev > 0 && stepStore.isAutoPlaying) {
+        scheduleAutoAdvance()
       }
     },
   )
@@ -137,5 +242,9 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     loadScenario,
     nextStep,
     prevStep,
+    replayCurrentStep,
+    jumpToStep,
+    toggleAutoPlay,
+    stopAutoPlay,
   }
 }

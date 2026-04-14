@@ -8,6 +8,8 @@ export const useStepStore = defineStore('step', () => {
   const isAutoPlaying = ref(false)
   /** Ticks remaining in autoRunTicks countdown */
   const autoRunTicksRemaining = ref(0)
+  /** Step indices the user has entered at least once */
+  const visitedSteps = ref<Set<number>>(new Set())
 
   const currentStep = computed<ScenarioStep | null>(() => {
     if (!currentScenario.value) return null
@@ -23,6 +25,15 @@ export const useStepStore = defineStore('step', () => {
     currentStepIndex.value = 0
     isAutoPlaying.value = false
     autoRunTicksRemaining.value = 0
+    visitedSteps.value = new Set()
+  }
+
+  function markVisited(index: number) {
+    if (!visitedSteps.value.has(index)) {
+      const next = new Set(visitedSteps.value)
+      next.add(index)
+      visitedSteps.value = next
+    }
   }
 
   function nextStep() {
@@ -63,11 +74,13 @@ export const useStepStore = defineStore('step', () => {
     currentStepIndex,
     isAutoPlaying,
     autoRunTicksRemaining,
+    visitedSteps,
     currentStep,
     totalSteps,
     isFirstStep,
     isLastStep,
     loadScenario,
+    markVisited,
     nextStep,
     prevStep,
     goToStep,

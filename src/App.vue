@@ -49,12 +49,14 @@ onMounted(() => {
           <button class="text-[11px] text-slate-500 hover:text-slate-300 transition-colors px-1.5 py-0.5 rounded border border-slate-700 hover:border-slate-500">
             Shortcuts
           </button>
-          <div class="hidden group-hover:block absolute right-0 top-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl p-3 z-50 w-52">
+          <div class="hidden group-hover:block absolute right-0 top-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl p-3 z-50 w-60">
             <div class="text-xs text-slate-300 space-y-1.5">
-              <div class="flex justify-between"><span class="text-slate-400">Pause/Resume</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
+              <div v-if="ui.mode === 'step-by-step'" class="flex justify-between"><span class="text-slate-400">Auto-play</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
+              <div v-else class="flex justify-between"><span class="text-slate-400">Pause/Resume</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Next step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">→</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Prev step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">←</kbd></div>
-              <div class="flex justify-between"><span class="text-slate-400">Reset</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">R</kbd></div>
+              <div v-if="ui.mode === 'step-by-step'" class="flex justify-between"><span class="text-slate-400">Replay step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">R</kbd></div>
+              <div v-else class="flex justify-between"><span class="text-slate-400">Reset</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">R</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Deselect</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Esc</kbd></div>
             </div>
           </div>
