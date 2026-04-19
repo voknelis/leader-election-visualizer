@@ -320,6 +320,4 @@ describe('useScenarioRunner', () => {
     })
   })
 
-  // Cleanup scopes between tests to avoid watcher leakage.
-  it.skip('teardown placeholder', () => {})
 })
