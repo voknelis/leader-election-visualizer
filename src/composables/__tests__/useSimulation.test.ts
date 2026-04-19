@@ -7,6 +7,18 @@ import { useSimulationStore } from '../../stores/simulationStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useUiStore } from '../../stores/uiStore'
 
+const { mockRoute } = vi.hoisted(() => {
+  const { ref } = require('vue')
+  const mockRoute = ref({ path: '/' } as any)
+  return { mockRoute }
+})
+vi.mock('../../router', () => ({
+  default: {
+    currentRoute: mockRoute,
+    push: (to: string) => { mockRoute.value = { path: to } as any },
+  },
+}))
+
 /**
  * Drive the rAF loop manually. We capture every requestAnimationFrame callback
  * and feed it controlled `now` timestamps via runFrame().
@@ -51,6 +63,7 @@ describe('useSimulation - playOneTick / cancelManualTick', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia())
+    mockRoute.value = { path: '/' }
     raf = makeRafController()
     vi.stubGlobal('requestAnimationFrame', raf.raf)
     vi.stubGlobal('cancelAnimationFrame', raf.caf)

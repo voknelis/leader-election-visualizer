@@ -1,9 +1,24 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUiStore } from '../uiStore'
 
+const { mockRoute } = vi.hoisted(() => {
+  const { ref } = require('vue')
+  const mockRoute = ref({ path: '/' } as any)
+  return { mockRoute }
+})
+vi.mock('../../router', () => ({
+  default: {
+    currentRoute: mockRoute,
+    push: (to: string) => { mockRoute.value = { path: to } as any },
+  },
+}))
+
 describe('uiStore', () => {
-  beforeEach(() => setActivePinia(createPinia()))
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    mockRoute.value = { path: '/' }
+  })
 
   it('defaults to demo mode, unpaused, no selection', () => {
     const ui = useUiStore()

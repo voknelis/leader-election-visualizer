@@ -8,6 +8,15 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      (function() {
+        var p = sessionStorage.getItem('spa-redirect');
+        if (p) {
+          sessionStorage.removeItem('spa-redirect');
+          history.replaceState(null, '', p);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

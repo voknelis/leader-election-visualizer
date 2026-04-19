@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { NodeId } from '../types/raft'
+import router from '../router'
 
 export type AppMode = 'demo' | 'step-by-step'
 
 export const useUiStore = defineStore('ui', () => {
-  const mode = ref<AppMode>('demo')
+  const mode = computed<AppMode>(() =>
+    router.currentRoute.value.path === '/learning' ? 'step-by-step' : 'demo',
+  )
   const isPaused = ref(false)
   const selectedNodeId = ref<NodeId | null>(null)
   const highlightedNodes = ref<NodeId[]>([])
@@ -22,7 +25,10 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   function setMode(m: AppMode) {
-    mode.value = m
+    const target = m === 'step-by-step' ? '/learning' : '/'
+    if (router.currentRoute.value.path !== target) {
+      router.push(target)
+    }
   }
 
   return {

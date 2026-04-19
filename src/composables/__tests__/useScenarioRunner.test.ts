@@ -9,6 +9,18 @@ import { useSimulationStore } from '../../stores/simulationStore'
 import type { Scenario, ScenarioStep } from '../../types/scenario'
 import type { useSimulation } from '../useSimulation'
 
+const { mockRoute } = vi.hoisted(() => {
+  const { ref } = require('vue')
+  const mockRoute = ref({ path: '/' } as any)
+  return { mockRoute }
+})
+vi.mock('../../router', () => ({
+  default: {
+    currentRoute: mockRoute,
+    push: (to: string) => { mockRoute.value = { path: to } as any },
+  },
+}))
+
 type FakeSim = ReturnType<typeof makeFakeSim>
 
 function makeFakeSim() {
@@ -60,6 +72,7 @@ describe('useScenarioRunner', () => {
   }
 
   beforeEach(() => {
+    mockRoute.value = { path: '/' }
     setup()
   })
 
