@@ -6,6 +6,9 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
 import { useStepStore } from '../stores/stepStore'
 
+const MAX_DELTA_MS = 200
+const MAX_TICKS_PER_FRAME = 20
+
 export function useSimulation() {
   const simStore = useSimulationStore()
   const settings = useSettingsStore()
@@ -63,16 +66,15 @@ export function useSimulation() {
       return
     }
 
-    const delta = Math.min(now - lastTime, 200) // cap to avoid spiral
+    const delta = Math.min(now - lastTime, MAX_DELTA_MS)
     lastTime = now
 
     const msPerTick = settings.msPerTick / settings.speedMultiplier
     tickAccumulator += delta
 
     let ticksThisFrame = 0
-    const maxTicksPerFrame = 20
 
-    while (tickAccumulator >= msPerTick && ticksThisFrame < maxTicksPerFrame) {
+    while (tickAccumulator >= msPerTick && ticksThisFrame < MAX_TICKS_PER_FRAME) {
       tickAccumulator -= msPerTick
       ticksThisFrame++
 

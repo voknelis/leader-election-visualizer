@@ -3,7 +3,6 @@ import { computed, inject } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
 import { useUiStore } from '../../stores/uiStore'
-import { useSimulationStore } from '../../stores/simulationStore'
 import type { useScenarioRunner } from '../../composables/useScenarioRunner'
 import ScenarioSelector from './ScenarioSelector.vue'
 import type { Scenario } from '../../types/scenario'
@@ -12,7 +11,6 @@ marked.setOptions({ breaks: true, gfm: true })
 
 const stepStore = useStepStore()
 const ui = useUiStore()
-const simStore = useSimulationStore()
 const runner = inject<ReturnType<typeof useScenarioRunner>>('scenarioRunner')!
 
 const progressPercent = computed(() => {
@@ -40,18 +38,7 @@ const autoRunDone = computed(
   () => hasAutoRun.value && stepStore.autoRunTicksRemaining === 0,
 )
 
-const conditionMet = computed(() => {
-  const step = stepStore.currentStep
-  if (!step?.advanceCondition) return false
-  const snap = {
-    tick: simStore.tick,
-    nodes: simStore.nodes,
-    messages: simStore.messages,
-    config: {} as any,
-    events: simStore.events,
-  }
-  return step.advanceCondition(snap)
-})
+const conditionMet = runner.conditionMet
 
 const tickButtonDisabled = computed(() => !runner.canTickNow.value)
 

@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
 import type { NodeId, RaftNodeState, InFlightMessage } from '../types/raft'
-import type { RaftEvent } from '../types/simulation'
+import type { RaftEvent, SimulationSnapshot } from '../types/simulation'
 
 export const useSimulationStore = defineStore('simulation', () => {
   const tick = ref(0)
   const nodes = shallowRef<Map<NodeId, RaftNodeState>>(new Map())
   const messages = shallowRef<InFlightMessage[]>([])
   const events = shallowRef<RaftEvent[]>([])
+  const partitions = shallowRef<Set<string>>(new Set())
   /** Accumulated event history for the log panel */
   const eventHistory = ref<RaftEvent[]>([])
   /**
@@ -16,16 +17,12 @@ export const useSimulationStore = defineStore('simulation', () => {
    */
   const frameFraction = ref(0)
 
-  function updateFromSnapshot(snapshot: {
-    tick: number
-    nodes: Map<NodeId, RaftNodeState>
-    messages: InFlightMessage[]
-    events: RaftEvent[]
-  }) {
+  function updateFromSnapshot(snapshot: SimulationSnapshot) {
     tick.value = snapshot.tick
     nodes.value = snapshot.nodes
     messages.value = snapshot.messages
     events.value = snapshot.events
+    partitions.value = snapshot.config.partitions
 
     if (snapshot.events.length > 0) {
       eventHistory.value = [...eventHistory.value, ...snapshot.events].slice(-200)
@@ -47,6 +44,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     nodes,
     messages,
     events,
+    partitions,
     eventHistory,
     frameFraction,
     updateFromSnapshot,

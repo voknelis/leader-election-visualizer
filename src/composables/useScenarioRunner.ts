@@ -3,6 +3,8 @@ import { useStepStore } from '../stores/stepStore'
 import { useUiStore } from '../stores/uiStore'
 import { useSimulationStore } from '../stores/simulationStore'
 import { NodeState } from '../types/raft'
+import type { SimulationSnapshot } from '../types/simulation'
+import { DEFAULT_CONFIG } from '../types/simulation'
 import type { EngineAction } from '../types/scenario'
 import type { Scenario } from '../types/scenario'
 import type { useSimulation } from './useSimulation'
@@ -18,18 +20,20 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   let autoReplayTimer: ReturnType<typeof setTimeout> | null = null
   const tickInFlight = ref(false)
 
-  /** Whether the current step's advanceCondition (if any) is currently satisfied against the live snapshot. */
-  const conditionMet = computed(() => {
-    const step = stepStore.currentStep
-    if (!step?.advanceCondition) return false
-    const snap = {
+  function liveSnapshot(): SimulationSnapshot {
+    return {
       tick: simStore.tick,
       nodes: simStore.nodes,
       messages: simStore.messages,
-      config: {} as any,
+      config: { ...DEFAULT_CONFIG, partitions: simStore.partitions },
       events: simStore.events,
     }
-    return step.advanceCondition(snap)
+  }
+
+  const conditionMet = computed(() => {
+    const step = stepStore.currentStep
+    if (!step?.advanceCondition) return false
+    return step.advanceCondition(liveSnapshot())
   })
 
   /** True when a manual tick is allowed: no animation in flight, step not already settled. */
@@ -228,14 +232,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     () => {
       if (ui.mode !== 'step-by-step' || !stepStore.currentStep?.advanceCondition) return
       if (ui.isPaused) return
-      const snap = {
-        tick: simStore.tick,
-        nodes: simStore.nodes,
-        messages: simStore.messages,
-        config: {} as any,
-        events: simStore.events,
-      }
-      if (stepStore.currentStep.advanceCondition(snap)) {
+      if (stepStore.currentStep.advanceCondition(liveSnapshot())) {
         ui.isPaused = true
         scheduleAutoReplay()
       }
@@ -282,6 +279,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     jumpToStep,
     tickOnce,
     canTickNow,
+    conditionMet,
     cancelAllTimers,
   }
 }

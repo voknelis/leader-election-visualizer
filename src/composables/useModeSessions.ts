@@ -81,7 +81,6 @@ export function useModeSessions(
     if (!s) return false
     applySettings(s.settings)
     sim.engine.value.restoreSnapshot(s.engine)
-    settings.nodeCount = s.engine.nodes.length
     simStore.eventHistory = s.eventHistory
     sim.syncSnapshot()
     ui.isPaused = s.isPaused

@@ -7,6 +7,14 @@ export interface NodePosition {
   y: number
 }
 
+const CHARGE_STRENGTH = -1800
+const CHARGE_DISTANCE_MAX = 500
+const COLLISION_RADIUS = 90
+const CENTER_PULL_STRENGTH = 0.06
+const ALPHA_DECAY = 0.05
+const VELOCITY_DECAY = 0.55
+const EDGE_PADDING = 60
+
 export function useD3Layout(
   nodeIds: () => NodeId[],
   width: () => number,
@@ -28,21 +36,20 @@ export function useD3Layout(
 
     simulation = d3.forceSimulation<SimNode>(nodes)
       .force('center', d3.forceCenter(w / 2, h / 2))
-      .force('charge', d3.forceManyBody().strength(-1800).distanceMax(500))
-      .force('collide', d3.forceCollide(90).strength(1).iterations(2))
-      .force('x', d3.forceX(w / 2).strength(0.06))
-      .force('y', d3.forceY(h / 2).strength(0.06))
-      .alphaDecay(0.05)
-      .velocityDecay(0.55)
+      .force('charge', d3.forceManyBody().strength(CHARGE_STRENGTH).distanceMax(CHARGE_DISTANCE_MAX))
+      .force('collide', d3.forceCollide(COLLISION_RADIUS).strength(1).iterations(2))
+      .force('x', d3.forceX(w / 2).strength(CENTER_PULL_STRENGTH))
+      .force('y', d3.forceY(h / 2).strength(CENTER_PULL_STRENGTH))
+      .alphaDecay(ALPHA_DECAY)
+      .velocityDecay(VELOCITY_DECAY)
       .on('tick', () => {
         const w = width()
         const h = height()
-        const pad = 60
         const map = new Map<NodeId, NodePosition>()
         for (const node of nodes) {
           map.set(node.id, {
-            x: Math.max(pad, Math.min(w - pad, node.x ?? w / 2)),
-            y: Math.max(pad, Math.min(h - pad, node.y ?? h / 2)),
+            x: Math.max(EDGE_PADDING, Math.min(w - EDGE_PADDING, node.x ?? w / 2)),
+            y: Math.max(EDGE_PADDING, Math.min(h - EDGE_PADDING, node.y ?? h / 2)),
           })
         }
         positions.value = map
@@ -89,8 +96,8 @@ export function useD3Layout(
       const h = height()
       simulation
         .force('center', d3.forceCenter(w / 2, h / 2))
-        .force('x', d3.forceX(w / 2).strength(0.06))
-        .force('y', d3.forceY(h / 2).strength(0.06))
+        .force('x', d3.forceX(w / 2).strength(CENTER_PULL_STRENGTH))
+        .force('y', d3.forceY(h / 2).strength(CENTER_PULL_STRENGTH))
       simulation.alpha(0.3).restart()
     }
   }

@@ -203,16 +203,14 @@ export class RaftNode {
 
     // Send RequestVote to all peers
     for (const peer of this.peers) {
-      const lastLogIndex = this.log.length
-      const lastLogTerm = this.log.length > 0 ? this.log[this.log.length - 1].term : 0
       this.outbox.push({
         to: peer,
         payload: {
           type: RpcType.REQUEST_VOTE,
           term: this.currentTerm,
           candidateId: this.id,
-          lastLogIndex,
-          lastLogTerm,
+          lastLogIndex: this.getLastLogIndex(),
+          lastLogTerm: this.getLastLogTerm(),
         },
       })
       this.emitEvent('vote_sent', { to: peer, term: this.currentTerm })
@@ -329,7 +327,7 @@ export class RaftNode {
 
     // Initialize nextIndex/matchIndex
     for (const peer of this.peers) {
-      this.nextIndex.set(peer, this.log.length + 1)
+      this.nextIndex.set(peer, this.getLastLogIndex() + 1)
       this.matchIndex.set(peer, 0)
     }
   }
@@ -344,8 +342,8 @@ export class RaftNode {
           term: this.currentTerm,
           leaderId: this.id,
           entries: [],
-          prevLogIndex: this.log.length,
-          prevLogTerm: this.log.length > 0 ? this.log[this.log.length - 1].term : 0,
+          prevLogIndex: this.getLastLogIndex(),
+          prevLogTerm: this.getLastLogTerm(),
           leaderCommit: this.commitIndex,
         },
       })
@@ -369,10 +367,18 @@ export class RaftNode {
     this.electionTimeoutMax = timeout
   }
 
+  private getLastLogIndex(): number {
+    return this.log.length
+  }
+
+  private getLastLogTerm(): number {
+    return this.log.length > 0 ? this.log[this.log.length - 1].term : 0
+  }
+
   private isLogUpToDate(lastLogIndex: number, lastLogTerm: number): boolean {
-    const myLastTerm = this.log.length > 0 ? this.log[this.log.length - 1].term : 0
+    const myLastTerm = this.getLastLogTerm()
     if (lastLogTerm !== myLastTerm) return lastLogTerm > myLastTerm
-    return lastLogIndex >= this.log.length
+    return lastLogIndex >= this.getLastLogIndex()
   }
 
   private hasQuorum(): boolean {

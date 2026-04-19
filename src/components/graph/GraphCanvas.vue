@@ -95,14 +95,8 @@ const edges = computed(() => {
   return result
 })
 
-// Check if an edge is partitioned
 function isPartitioned(a: string, b: string): boolean {
-  const partitions = simStore.nodes.size > 0
-    ? (simStore as any)._rawPartitions
-    : new Set<string>()
-  // Check from config in snapshot — we need to read this from messages
-  // For now, approximate by checking if there are no messages between these nodes
-  return false // Will be properly wired in Phase 4 with partition overlay
+  return simStore.partitions.has(`${a}:${b}`)
 }
 
 function handleResize() {

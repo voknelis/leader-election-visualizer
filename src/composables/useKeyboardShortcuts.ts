@@ -12,7 +12,9 @@ export function useKeyboardShortcuts(
   const stepStore = useStepStore()
 
   function handler(e: KeyboardEvent) {
-    if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+    const tag = (e.target as HTMLElement)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    if ((e.target as HTMLElement)?.isContentEditable) return
 
     switch (e.code) {
       case 'Space':
