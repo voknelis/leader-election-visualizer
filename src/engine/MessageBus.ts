@@ -13,12 +13,15 @@ export interface MessageBusConfig {
 
 export class MessageBus {
   private messages: InFlightMessage[] = []
+  private config: MessageBusConfig
+  private partition: NetworkPartition
+  private prng: Prng
 
-  constructor(
-    private config: MessageBusConfig,
-    private partition: NetworkPartition,
-    private prng: Prng,
-  ) {}
+  constructor(config: MessageBusConfig, partition: NetworkPartition, prng: Prng) {
+    this.config = config
+    this.partition = partition
+    this.prng = prng
+  }
 
   enqueue(from: NodeId, to: NodeId, payload: RpcPayload, currentTick: number): void {
     const delay = randomInt(this.prng, this.config.messageDelayMin, this.config.messageDelayMax)

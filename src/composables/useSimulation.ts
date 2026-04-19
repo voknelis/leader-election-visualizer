@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { RaftEngine } from '../engine/RaftEngine'
 import type { EngineSnapshot } from '../engine/RaftEngine'
 import { useSimulationStore } from '../stores/simulationStore'
@@ -13,7 +13,7 @@ export function useSimulation() {
   const ui = useUiStore()
   const stepStore = useStepStore()
 
-  const engine = ref<RaftEngine>(new RaftEngine({
+  const engine = shallowRef<RaftEngine>(new RaftEngine({
     nodeCount: settings.nodeCount,
     electionTimeoutMin: settings.electionTimeoutMin,
     electionTimeoutMax: settings.electionTimeoutMax,

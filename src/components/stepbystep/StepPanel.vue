@@ -2,7 +2,6 @@
 import { computed, inject } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
-import { useUiStore } from '../../stores/uiStore'
 import type { useScenarioRunner } from '../../composables/useScenarioRunner'
 import ScenarioSelector from './ScenarioSelector.vue'
 import type { Scenario } from '../../types/scenario'
@@ -10,7 +9,6 @@ import type { Scenario } from '../../types/scenario'
 marked.setOptions({ breaks: true, gfm: true })
 
 const stepStore = useStepStore()
-const ui = useUiStore()
 const runner = inject<ReturnType<typeof useScenarioRunner>>('scenarioRunner')!
 
 const progressPercent = computed(() => {

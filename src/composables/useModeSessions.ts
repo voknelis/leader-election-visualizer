@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import type { EngineSnapshot } from '../engine/RaftEngine'
 import type { RaftEvent } from '../types/simulation'
 import type { NodeId } from '../types/raft'

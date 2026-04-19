@@ -1,4 +1,4 @@
-import type { NodeId, RpcPayload, InFlightMessage } from '../types/raft'
+import type { NodeId, InFlightMessage } from '../types/raft'
 import { RpcType } from '../types/raft'
 import type { SimulationConfig, SimulationSnapshot, RaftEvent } from '../types/simulation'
 import { DEFAULT_CONFIG } from '../types/simulation'

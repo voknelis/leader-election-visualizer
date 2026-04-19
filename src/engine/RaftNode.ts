@@ -39,12 +39,12 @@ export class RaftNode {
   private outbox: OutgoingMessage[] = []
   private events: RaftEvent[] = []
   private currentTick = 0
+  private config: RaftNodeConfig
+  private prng: Prng
 
-  constructor(
-    id: NodeId,
-    private config: RaftNodeConfig,
-    private prng: Prng,
-  ) {
+  constructor(id: NodeId, config: RaftNodeConfig, prng: Prng) {
+    this.config = config
+    this.prng = prng
     this.id = id
     const timeout = randomInt(prng, config.electionTimeoutMin, config.electionTimeoutMax)
     this.electionTimeoutTicks = timeout
