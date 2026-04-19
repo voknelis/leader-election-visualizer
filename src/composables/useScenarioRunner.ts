@@ -1,4 +1,4 @@
-import { watch, inject } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { useStepStore } from '../stores/stepStore'
 import { useUiStore } from '../stores/uiStore'
 import { useSimulationStore } from '../stores/simulationStore'
@@ -7,7 +7,6 @@ import type { EngineAction } from '../types/scenario'
 import type { Scenario } from '../types/scenario'
 import type { useSimulation } from './useSimulation'
 
-const AUTO_PLAY_DELAY_MS = 1500
 const AUTO_REPLAY_DELAY_MS = 2500
 
 export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
@@ -16,15 +15,35 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   const simStore = useSimulationStore()
   const sim = simParam ?? inject<ReturnType<typeof useSimulation>>('simulation')!
 
-  let autoPlayTimer: ReturnType<typeof setTimeout> | null = null
   let autoReplayTimer: ReturnType<typeof setTimeout> | null = null
+  const tickInFlight = ref(false)
 
-  function cancelAutoPlayTimer() {
-    if (autoPlayTimer !== null) {
-      clearTimeout(autoPlayTimer)
-      autoPlayTimer = null
+  /** Whether the current step's advanceCondition (if any) is currently satisfied against the live snapshot. */
+  const conditionMet = computed(() => {
+    const step = stepStore.currentStep
+    if (!step?.advanceCondition) return false
+    const snap = {
+      tick: simStore.tick,
+      nodes: simStore.nodes,
+      messages: simStore.messages,
+      config: {} as any,
+      events: simStore.events,
     }
-  }
+    return step.advanceCondition(snap)
+  })
+
+  /** True when a manual tick is allowed: no animation in flight, step not already settled. */
+  const canTickNow = computed(() => {
+    if (tickInFlight.value) return false
+    const step = stepStore.currentStep
+    if (!step) return false
+    const hasAutoRun = (step.autoRunTicks ?? 0) > 0
+    const hasCondition = !!step.advanceCondition
+    if (!hasAutoRun && !hasCondition) return false
+    if (hasAutoRun && stepStore.autoRunTicksRemaining === 0 && !hasCondition) return false
+    if (conditionMet.value) return false
+    return true
+  })
 
   function cancelAutoReplayTimer() {
     if (autoReplayTimer !== null) {
@@ -33,14 +52,14 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     }
   }
 
-  function cancelAllTimers() {
-    cancelAutoPlayTimer()
-    cancelAutoReplayTimer()
+  function clearTickInFlight() {
+    sim.cancelManualTick()
+    tickInFlight.value = false
   }
 
-  function stopAutoPlay() {
-    cancelAllTimers()
-    stepStore.isAutoPlaying = false
+  function cancelAllTimers() {
+    cancelAutoReplayTimer()
+    clearTickInFlight()
   }
 
   function loadScenario(scenario: Scenario) {
@@ -60,14 +79,20 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
 
     ui.highlightedNodes = step.highlightNodes ?? []
 
-    if (step.autoRunTicks) {
-      stepStore.autoRunTicksRemaining = step.autoRunTicks
-      ui.isPaused = false
-    } else if (step.advanceCondition) {
-      ui.isPaused = false
-    } else {
+    const hasAutoRun = !!step.autoRunTicks
+    const hasCondition = !!step.advanceCondition
+
+    if (!hasAutoRun && !hasCondition) {
       ui.isPaused = true
+      return
     }
+
+    if (hasAutoRun) {
+      stepStore.autoRunTicksRemaining = step.autoRunTicks!
+    }
+
+    // Manual mode: keep paused; user drives ticks via tickOnce()
+    ui.isPaused = !stepStore.autoAdvance
   }
 
   /** Enter a step for the first time: run engine actions, snapshot the stable starting state, then drive the step. */
@@ -89,6 +114,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   function replayStep(stepIndex: number) {
     const restored = sim.restoreStepSnapshot(stepIndex)
     if (!restored) return false
+    clearTickInFlight()
     runStepPostActions(stepIndex)
     return true
   }
@@ -99,10 +125,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
   }
 
   function nextStep() {
-    if (stepStore.isLastStep) {
-      stopAutoPlay()
-      return
-    }
+    if (stepStore.isLastStep) return
     cancelAllTimers()
     stepStore.nextStep()
     const idx = stepStore.currentStepIndex
@@ -132,70 +155,26 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     replayStep(targetIndex)
   }
 
-  function toggleAutoPlay() {
-    if (stepStore.isAutoPlaying) {
-      stopAutoPlay()
-    } else {
-      if (stepStore.isLastStep) return
-      cancelAutoReplayTimer()
-      stepStore.isAutoPlaying = true
-      scheduleAutoAdvanceIfSettled()
-    }
+  /** Manually advance the simulation by one animated tick (only sensible in manual mode). */
+  function tickOnce() {
+    if (!stepStore.currentScenario) return
+    if (!canTickNow.value) return
+    const started = sim.playOneTick(() => {
+      tickInFlight.value = false
+    })
+    if (started) tickInFlight.value = true
   }
 
-  function scheduleAutoAdvance() {
-    cancelAutoPlayTimer()
-    autoPlayTimer = setTimeout(() => {
-      autoPlayTimer = null
-      if (!stepStore.isAutoPlaying) return
-      if (stepStore.isLastStep) {
-        stopAutoPlay()
-        return
-      }
-      nextStepFromAutoPlay()
-    }, AUTO_PLAY_DELAY_MS)
-  }
-
-  function nextStepFromAutoPlay() {
-    if (stepStore.isLastStep) {
-      stopAutoPlay()
-      return
-    }
-    stepStore.nextStep()
-    const idx = stepStore.currentStepIndex
-    if (stepStore.visitedSteps.has(idx)) {
-      replayStep(idx)
-    } else {
-      applyStep(idx)
-    }
-    scheduleAutoAdvanceIfSettled()
-  }
-
-  /** Step is "settled" when autoRun has finished AND no condition-wait is active. */
-  function isStepSettled() {
-    if (stepStore.autoRunTicksRemaining > 0) return false
-    const step = stepStore.currentStep
-    if (step?.advanceCondition && !ui.isPaused) return false
-    return true
-  }
-
-  /** If the current step is already settled, queue the next advance. */
-  function scheduleAutoAdvanceIfSettled() {
-    if (!stepStore.isAutoPlaying) return
-    if (isStepSettled()) scheduleAutoAdvance()
-  }
-
-  /** Loop the current step's animation when user is not auto-playing. */
+  /** Loop the current step's animation when user is letting it run on its own. */
   function scheduleAutoReplay() {
     cancelAutoReplayTimer()
-    if (stepStore.isAutoPlaying) return
+    if (!stepStore.autoAdvance) return
     const step = stepStore.currentStep
     if (!step) return
     const hasAnimation = (step.autoRunTicks ?? 0) > 0 || !!step.advanceCondition
     if (!hasAnimation) return
     autoReplayTimer = setTimeout(() => {
       autoReplayTimer = null
-      if (stepStore.isAutoPlaying) return
       replayStep(stepStore.currentStepIndex)
     }, AUTO_REPLAY_DELAY_MS)
   }
@@ -243,7 +222,7 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     }
   }
 
-  // advanceCondition watcher: pause when condition is met, optionally queue auto-advance
+  // advanceCondition watcher: pause when condition is met, queue auto-replay
   watch(
     () => simStore.tick,
     () => {
@@ -258,19 +237,39 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
       }
       if (stepStore.currentStep.advanceCondition(snap)) {
         ui.isPaused = true
-        if (stepStore.isAutoPlaying) scheduleAutoAdvance()
-        else scheduleAutoReplay()
+        scheduleAutoReplay()
       }
     },
   )
 
-  // autoRunTicks countdown settled: queue auto-advance or auto-replay
+  // autoRunTicks countdown settled: queue auto-replay
   watch(
     () => stepStore.autoRunTicksRemaining,
     (remaining, prev) => {
       if (remaining === 0 && prev && prev > 0) {
-        if (stepStore.isAutoPlaying) scheduleAutoAdvance()
-        else scheduleAutoReplay()
+        scheduleAutoReplay()
+      }
+    },
+  )
+
+  // Live-toggle of autoAdvance: off → pause; on → resume drained-step or condition-step
+  watch(
+    () => stepStore.autoAdvance,
+    (enabled) => {
+      if (ui.mode !== 'step-by-step' || !stepStore.currentScenario) return
+      const step = stepStore.currentStep
+      if (!step) return
+      if (!enabled) {
+        ui.isPaused = true
+        cancelAutoReplayTimer()
+        return
+      }
+      // Don't resume a step that's already settled — condition met or autoRun drained with no condition.
+      if (conditionMet.value) return
+      const hasRemainingTicks = stepStore.autoRunTicksRemaining > 0
+      const hasOpenCondition = !!step.advanceCondition
+      if (hasRemainingTicks || hasOpenCondition) {
+        ui.isPaused = false
       }
     },
   )
@@ -281,7 +280,8 @@ export function useScenarioRunner(simParam?: ReturnType<typeof useSimulation>) {
     prevStep,
     replayCurrentStep,
     jumpToStep,
-    toggleAutoPlay,
-    stopAutoPlay,
+    tickOnce,
+    canTickNow,
+    cancelAllTimers,
   }
 }

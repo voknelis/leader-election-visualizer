@@ -105,7 +105,7 @@ export function useModeSessions(
     (newMode, oldMode) => {
       if (!oldMode || newMode === oldMode) return
       if (oldMode === 'step-by-step') {
-        runner.stopAutoPlay()
+        runner.cancelAllTimers()
         stepStore.autoRunTicksRemaining = 0
       }
       save(oldMode)

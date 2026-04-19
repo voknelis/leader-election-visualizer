@@ -5,11 +5,12 @@ import type { Scenario, ScenarioStep } from '../types/scenario'
 export const useStepStore = defineStore('step', () => {
   const currentScenario = ref<Scenario | null>(null)
   const currentStepIndex = ref(0)
-  const isAutoPlaying = ref(false)
   /** Ticks remaining in autoRunTicks countdown */
   const autoRunTicksRemaining = ref(0)
   /** Step indices the user has entered at least once */
   const visitedSteps = ref<Set<number>>(new Set())
+  /** When false, step entry does NOT auto-run ticks; user advances manually with the Tick button */
+  const autoAdvance = ref(true)
 
   const currentStep = computed<ScenarioStep | null>(() => {
     if (!currentScenario.value) return null
@@ -23,9 +24,9 @@ export const useStepStore = defineStore('step', () => {
   function loadScenario(scenario: Scenario) {
     currentScenario.value = scenario
     currentStepIndex.value = 0
-    isAutoPlaying.value = false
     autoRunTicksRemaining.value = 0
     visitedSteps.value = new Set()
+    // autoAdvance is intentionally NOT reset — user preference persists across scenarios.
   }
 
   function markVisited(index: number) {
@@ -57,10 +58,6 @@ export const useStepStore = defineStore('step', () => {
     }
   }
 
-  function toggleAutoPlay() {
-    isAutoPlaying.value = !isAutoPlaying.value
-  }
-
   function decrementAutoRunTicks(): boolean {
     if (autoRunTicksRemaining.value > 0) {
       autoRunTicksRemaining.value--
@@ -72,9 +69,9 @@ export const useStepStore = defineStore('step', () => {
   return {
     currentScenario,
     currentStepIndex,
-    isAutoPlaying,
     autoRunTicksRemaining,
     visitedSteps,
+    autoAdvance,
     currentStep,
     totalSteps,
     isFirstStep,
@@ -84,7 +81,6 @@ export const useStepStore = defineStore('step', () => {
     nextStep,
     prevStep,
     goToStep,
-    toggleAutoPlay,
     decrementAutoRunTicks,
   }
 })

@@ -28,9 +28,35 @@ export function useSimulation() {
   let animFrameId: number | null = null
   let lastTime = 0
   let tickAccumulator = 0
+  /** When set, a single manual tick is animating; rAF interpolates frameFraction and fires the tick at completion. */
+  let manualTickStart: number | null = null
+  let manualTickOnComplete: (() => void) | null = null
 
   function loop(now: number) {
     animFrameId = requestAnimationFrame(loop)
+
+    // Manual single-tick animation takes priority over normal pause/auto-tick logic
+    if (manualTickStart !== null) {
+      const animMs = settings.msPerTick / Math.max(settings.speedMultiplier, 0.0001)
+      const elapsed = now - manualTickStart
+      if (elapsed >= animMs) {
+        const snapshot = engine.value.tick()
+        simStore.updateFromSnapshot(snapshot)
+        if (ui.mode === 'step-by-step' && stepStore.autoRunTicksRemaining > 0) {
+          stepStore.decrementAutoRunTicks()
+        }
+        simStore.frameFraction = 0
+        manualTickStart = null
+        const cb = manualTickOnComplete
+        manualTickOnComplete = null
+        cb?.()
+      } else {
+        simStore.frameFraction = animMs > 0 ? Math.min(elapsed / animMs, 1) : 0
+      }
+      lastTime = now
+      tickAccumulator = 0
+      return
+    }
 
     if (ui.isPaused) {
       lastTime = now
@@ -87,9 +113,22 @@ export function useSimulation() {
     }
   }
 
-  /** Tick once */
+  /** Tick once (instant — no animation) */
   function tickOnce() {
     tickN(1)
+  }
+
+  /** Animate one tick over msPerTick / speed ms; calls onComplete after the tick fires. Cancels any prior pending manual tick. */
+  function playOneTick(onComplete?: () => void): boolean {
+    if (manualTickStart !== null) return false
+    manualTickStart = performance.now()
+    manualTickOnComplete = onComplete ?? null
+    return true
+  }
+
+  function cancelManualTick() {
+    manualTickStart = null
+    manualTickOnComplete = null
   }
 
   // --- Engine mutation wrappers ---
@@ -182,6 +221,8 @@ export function useSimulation() {
     stop,
     tickOnce,
     tickN,
+    playOneTick,
+    cancelManualTick,
     addNode,
     removeNode,
     crashNode,

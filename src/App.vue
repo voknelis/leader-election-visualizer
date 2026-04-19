@@ -54,8 +54,8 @@ onMounted(() => {
           </button>
           <div class="hidden group-hover:block absolute right-0 top-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl p-3 z-50 w-60">
             <div class="text-xs text-slate-300 space-y-1.5">
-              <div v-if="ui.mode === 'step-by-step'" class="flex justify-between"><span class="text-slate-400">Auto-play</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
-              <div v-else class="flex justify-between"><span class="text-slate-400">Pause/Resume</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
+              <div class="flex justify-between"><span class="text-slate-400">Pause/Resume</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">Space</kbd></div>
+              <div v-if="ui.mode === 'step-by-step'" class="flex justify-between"><span class="text-slate-400">Tick once</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">T</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Next step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">→</kbd></div>
               <div class="flex justify-between"><span class="text-slate-400">Prev step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">←</kbd></div>
               <div v-if="ui.mode === 'step-by-step'" class="flex justify-between"><span class="text-slate-400">Replay step</span><kbd class="bg-slate-700 px-1.5 rounded text-slate-300">R</kbd></div>

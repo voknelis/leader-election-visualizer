@@ -3,6 +3,7 @@ import { computed, inject } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
 import { useUiStore } from '../../stores/uiStore'
+import { useSimulationStore } from '../../stores/simulationStore'
 import type { useScenarioRunner } from '../../composables/useScenarioRunner'
 import ScenarioSelector from './ScenarioSelector.vue'
 import type { Scenario } from '../../types/scenario'
@@ -11,6 +12,7 @@ marked.setOptions({ breaks: true, gfm: true })
 
 const stepStore = useStepStore()
 const ui = useUiStore()
+const simStore = useSimulationStore()
 const runner = inject<ReturnType<typeof useScenarioRunner>>('scenarioRunner')!
 
 const progressPercent = computed(() => {
@@ -23,27 +25,73 @@ const renderedNarration = computed(() =>
 )
 
 const autoRunTotal = computed(() => stepStore.currentStep?.autoRunTicks ?? 0)
-const autoRunProgress = computed(() => {
+const autoRunCompleted = computed(() =>
+  Math.max(0, autoRunTotal.value - stepStore.autoRunTicksRemaining),
+)
+const autoRunPercent = computed(() => {
   if (autoRunTotal.value === 0) return 0
-  const done = autoRunTotal.value - stepStore.autoRunTicksRemaining
-  return Math.max(0, Math.min(100, (done / autoRunTotal.value) * 100))
+  return Math.max(0, Math.min(100, (autoRunCompleted.value / autoRunTotal.value) * 100))
 })
 
-const isAutoAdvancing = computed(() => stepStore.autoRunTicksRemaining > 0)
-const isAwaitingCondition = computed(
-  () =>
-    stepStore.isAutoPlaying &&
-    !isAutoAdvancing.value &&
-    !!stepStore.currentStep?.advanceCondition &&
-    !ui.isPaused,
+const hasAutoRun = computed(() => autoRunTotal.value > 0)
+const hasCondition = computed(() => !!stepStore.currentStep?.advanceCondition)
+const showStatusStrip = computed(() => hasAutoRun.value || hasCondition.value)
+const autoRunDone = computed(
+  () => hasAutoRun.value && stepStore.autoRunTicksRemaining === 0,
 )
+
+const conditionMet = computed(() => {
+  const step = stepStore.currentStep
+  if (!step?.advanceCondition) return false
+  const snap = {
+    tick: simStore.tick,
+    nodes: simStore.nodes,
+    messages: simStore.messages,
+    config: {} as any,
+    events: simStore.events,
+  }
+  return step.advanceCondition(snap)
+})
+
+const tickButtonDisabled = computed(() => !runner.canTickNow.value)
+
+type StripState = {
+  label: string
+  detail: string
+  bar: 'amber' | 'muted' | 'empty' | 'none'
+  pulse: boolean
+}
+
+const statusStrip = computed<StripState>(() => {
+  const manual = !stepStore.autoAdvance
+
+  if (hasAutoRun.value) {
+    const detail = `${autoRunCompleted.value} / ${autoRunTotal.value} ticks`
+    if (autoRunDone.value) {
+      return { label: 'Done', detail, bar: 'muted', pulse: false }
+    }
+    if (manual) {
+      return { label: 'Manual', detail, bar: 'empty', pulse: false }
+    }
+    return { label: 'Running…', detail, bar: 'amber', pulse: false }
+  }
+
+  // condition-only step
+  if (conditionMet.value) {
+    return { label: 'Condition met', detail: '', bar: 'none', pulse: false }
+  }
+  if (manual) {
+    return { label: 'Manual', detail: 'waiting for condition', bar: 'none', pulse: false }
+  }
+  return { label: 'Waiting for condition…', detail: '', bar: 'none', pulse: true }
+})
 
 function handleSelectScenario(scenario: Scenario) {
   runner.loadScenario(scenario)
 }
 
 function handleClose() {
-  runner.stopAutoPlay()
+  runner.cancelAllTimers()
   stepStore.currentScenario = null
 }
 </script>
@@ -123,33 +171,70 @@ function handleClose() {
         />
       </div>
 
-      <!-- Auto-run status strip -->
+      <!-- Auto-run status strip (always visible when step has autoRun or condition) -->
       <div
-        v-if="isAutoAdvancing || isAwaitingCondition"
+        v-if="showStatusStrip"
         class="px-4 py-2 border-t border-slate-700 bg-slate-900/40 text-xs text-slate-400"
       >
-        <template v-if="isAutoAdvancing">
-          <div class="flex items-center justify-between mb-1">
-            <span>Auto-advancing…</span>
-            <span class="font-mono text-slate-500">{{ stepStore.autoRunTicksRemaining }} / {{ autoRunTotal }} ticks</span>
-          </div>
-          <div class="w-full bg-slate-700 rounded-full h-1">
-            <div
-              class="bg-amber-500 h-1 rounded-full transition-all"
-              :style="{ width: `${autoRunProgress}%` }"
+        <div class="flex items-center justify-between mb-1.5 gap-2">
+          <span class="flex items-center gap-2 min-w-0">
+            <span
+              v-if="statusStrip.pulse"
+              class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0"
             />
+            <span class="truncate">
+              {{ statusStrip.label }}
+              <span v-if="statusStrip.detail" class="text-slate-500">· {{ statusStrip.detail }}</span>
+            </span>
+          </span>
+          <span v-if="hasAutoRun" class="font-mono text-slate-500 flex-shrink-0">
+            {{ autoRunCompleted }} / {{ autoRunTotal }}
+          </span>
+        </div>
+        <div v-if="hasAutoRun" class="w-full bg-slate-700 rounded-full h-1">
+          <div
+            class="h-1 rounded-full transition-all"
+            :class="statusStrip.bar === 'amber'
+              ? 'bg-amber-500'
+              : statusStrip.bar === 'muted'
+                ? 'bg-slate-500'
+                : 'bg-slate-600/40'"
+            :style="{ width: `${autoRunPercent}%` }"
+          />
+        </div>
+      </div>
+
+      <!-- Auto-advance toggle + manual tick + replay -->
+      <div class="px-4 py-2 border-t border-slate-700 bg-slate-900/30">
+        <div class="flex items-center justify-between gap-3">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none min-w-0">
+            <input
+              type="checkbox"
+              class="accent-blue-500 flex-shrink-0"
+              :checked="stepStore.autoAdvance"
+              @change="stepStore.autoAdvance = ($event.target as HTMLInputElement).checked"
+            />
+            <span class="truncate">Auto-advance ticks</span>
+          </label>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button
+              v-if="!stepStore.autoAdvance && showStatusStrip"
+              class="px-2.5 py-1 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Tick once (T)"
+              :disabled="tickButtonDisabled"
+              @click="runner.tickOnce()"
+            >▶ Tick once</button>
+            <button
+              class="w-6 h-6 flex items-center justify-center rounded text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600"
+              title="Replay current step (R)"
+              @click="runner.replayCurrentStep()"
+            >↻</button>
           </div>
-        </template>
-        <template v-else-if="isAwaitingCondition">
-          <div class="flex items-center gap-2">
-            <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span>Waiting for condition…</span>
-          </div>
-        </template>
+        </div>
       </div>
 
       <!-- Navigation -->
-      <div class="p-4 border-t border-slate-700 space-y-2">
+      <div class="p-4 border-t border-slate-700">
         <div class="flex gap-2">
           <button
             class="flex-1 px-3 py-2 rounded text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -157,26 +242,11 @@ function handleClose() {
             @click="runner.prevStep()"
           >← Prev</button>
           <button
-            class="px-3 py-2 rounded text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600"
-            title="Replay current step (R)"
-            @click="runner.replayCurrentStep()"
-          >↻</button>
-          <button
             class="flex-1 px-3 py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
             :disabled="stepStore.isLastStep"
             @click="runner.nextStep()"
           >Next →</button>
         </div>
-        <button
-          class="w-full px-3 py-2 rounded text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          :class="stepStore.isAutoPlaying
-            ? 'bg-amber-600 text-white hover:bg-amber-500'
-            : 'bg-slate-700 text-slate-200 hover:bg-slate-600'"
-          :disabled="stepStore.isLastStep && !stepStore.isAutoPlaying"
-          @click="runner.toggleAutoPlay()"
-        >
-          {{ stepStore.isAutoPlaying ? '⏸ Pause auto-play' : '▶ Auto-play scenario' }}
-        </button>
       </div>
     </div>
   </div>

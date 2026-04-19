@@ -17,10 +17,13 @@ export function useKeyboardShortcuts(
     switch (e.code) {
       case 'Space':
         e.preventDefault()
+        ui.togglePause()
+        break
+      case 'KeyT':
+        if (e.ctrlKey || e.metaKey) return
         if (ui.mode === 'step-by-step' && stepStore.currentScenario) {
-          runner.toggleAutoPlay()
-        } else {
-          ui.togglePause()
+          e.preventDefault()
+          runner.tickOnce()
         }
         break
       case 'ArrowRight':
