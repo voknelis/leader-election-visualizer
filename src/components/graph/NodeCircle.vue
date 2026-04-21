@@ -22,11 +22,11 @@ const radius = 32
 
 const stateColor = computed(() => {
   switch (props.node.state) {
-    case NodeState.LEADER: return '#22c55e'
-    case NodeState.CANDIDATE: return '#eab308'
-    case NodeState.FOLLOWER: return '#64748b'
-    case NodeState.CRASHED: return '#ef4444'
-    default: return '#64748b'
+    case NodeState.LEADER: return 'var(--color-leader)'
+    case NodeState.CANDIDATE: return 'var(--color-candidate)'
+    case NodeState.FOLLOWER: return 'var(--color-follower)'
+    case NodeState.CRASHED: return 'var(--color-crashed)'
+    default: return 'var(--color-follower)'
   }
 })
 
@@ -89,7 +89,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
       v-if="selected"
       :r="radius + 10"
       fill="none"
-      stroke="#3b82f6"
+      :style="{ stroke: 'var(--color-selection)' }"
       stroke-width="2"
       stroke-dasharray="4 3"
     />
@@ -97,8 +97,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
     <!-- Main circle -->
     <circle
       :r="radius"
-      fill="#1e293b"
-      :stroke="stateColor"
+      :style="{ fill: 'var(--color-node-fill)', stroke: stateColor }"
       stroke-width="3"
     />
 
@@ -118,7 +117,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
       v-if="heartbeatArc"
       :d="heartbeatArc"
       fill="none"
-      stroke="#22c55e"
+      :style="{ stroke: 'var(--color-leader)' }"
       stroke-width="3"
       stroke-linecap="round"
       opacity="0.7"
@@ -126,15 +125,15 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
 
     <!-- Crashed X overlay -->
     <g v-if="node.state === 'crashed'" opacity="0.8">
-      <line x1="-12" y1="-12" x2="12" y2="12" stroke="#ef4444" stroke-width="3" stroke-linecap="round" />
-      <line x1="12" y1="-12" x2="-12" y2="12" stroke="#ef4444" stroke-width="3" stroke-linecap="round" />
+      <line x1="-12" y1="-12" x2="12" y2="12" :style="{ stroke: 'var(--color-crashed)' }" stroke-width="3" stroke-linecap="round" />
+      <line x1="12" y1="-12" x2="-12" y2="12" :style="{ stroke: 'var(--color-crashed)' }" stroke-width="3" stroke-linecap="round" />
     </g>
 
     <!-- Node ID -->
     <text
       y="4"
       text-anchor="middle"
-      fill="#e2e8f0"
+      :style="{ fill: 'var(--color-node-text)' }"
       font-size="14"
       font-weight="600"
     >{{ node.id }}</text>
@@ -144,7 +143,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
       :x="radius - 4"
       :y="-(radius - 4)"
       text-anchor="middle"
-      :fill="stateColor"
+      :style="{ fill: stateColor }"
       font-size="10"
       font-weight="700"
     >{{ stateLabel }}</text>
@@ -153,7 +152,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
     <text
       y="20"
       text-anchor="middle"
-      fill="#94a3b8"
+      :style="{ fill: 'var(--color-node-term)' }"
       font-size="10"
     >T{{ node.currentTerm }}</text>
 
@@ -162,7 +161,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
       v-if="node.state === 'candidate'"
       y="-18"
       text-anchor="middle"
-      fill="#eab308"
+      :style="{ fill: 'var(--color-candidate)' }"
       font-size="9"
     >votes: {{ node.votesReceived.size }}</text>
   </g>

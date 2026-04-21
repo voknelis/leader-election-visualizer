@@ -29,16 +29,16 @@ function healPartition() {
 
 <template>
   <div>
-    <label class="text-xs text-slate-400 block mb-1">Network Partition</label>
+    <label class="text-xs text-label block mb-1">Network Partition</label>
     <div v-if="!partitionActive" class="space-y-2">
       <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-500">Split after node</span>
+        <span class="text-xs text-dim">Split after node</span>
         <input
           type="number"
           :min="1"
           :max="maxSplit"
           v-model.number="splitAfter"
-          class="w-12 px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-xs text-white text-center"
+          class="w-12 px-1 py-0.5 bg-card border border-border-dim rounded text-xs text-heading text-center"
         >
       </div>
       <button
@@ -47,7 +47,7 @@ function healPartition() {
       >Split Network</button>
     </div>
     <div v-else class="space-y-2">
-      <p class="text-xs text-red-400">⚡ Network partitioned</p>
+      <p class="text-xs text-crashed-text">Network partitioned</p>
       <button
         class="w-full px-2 py-1 rounded bg-green-700 text-white text-sm hover:bg-green-600"
         @click="healPartition"

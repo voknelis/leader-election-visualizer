@@ -1,10 +1,116 @@
 @import "tailwindcss";
 
+@theme {
+  /* Surface & Layout */
+  --color-surface: #0f172a;
+  --color-panel: #1e293b;
+  --color-card: #334155;
+  --color-btn: #475569;
+  --color-overlay: rgba(15, 23, 42, 0.8);
+  --color-border: #334155;
+  --color-border-dim: #475569;
+
+  /* Text */
+  --color-heading: #ffffff;
+  --color-body: #e2e8f0;
+  --color-label: #94a3b8;
+  --color-dim: #64748b;
+  --color-faint: #475569;
+
+  /* Raft state (SVG strokes + bg) */
+  --color-leader: #22c55e;
+  --color-candidate: #eab308;
+  --color-follower: #64748b;
+  --color-crashed: #ef4444;
+
+  /* Raft state text (on panel bg) */
+  --color-leader-text: #4ade80;
+  --color-candidate-text: #facc15;
+  --color-follower-text: #94a3b8;
+  --color-crashed-text: #f87171;
+
+  /* RPC messages */
+  --color-rpc-vote: #3b82f6;
+  --color-rpc-vote-reply: #93c5fd;
+  --color-rpc-append: #22c55e;
+  --color-rpc-append-reply: #86efac;
+
+  /* Graph structural */
+  --color-node-fill: #1e293b;
+  --color-node-text: #e2e8f0;
+  --color-node-term: #94a3b8;
+  --color-selection: #3b82f6;
+  --color-edge: #334155;
+  --color-edge-partitioned: #ef4444;
+
+  /* Event log */
+  --color-evt-timeout: #fb923c;
+  --color-evt-heartbeat: #86efac;
+  --color-evt-vote-sent: #93c5fd;
+  --color-evt-vote-recv: #bfdbfe;
+  --color-evt-msg-drop: #fca5a5;
+  --color-evt-term-inc: #c084fc;
+  --color-evt-restored: #60a5fa;
+}
+
+html.light {
+  /* Surface & Layout */
+  --color-surface: #f8fafc;
+  --color-panel: #ffffff;
+  --color-card: #e2e8f0;
+  --color-btn: #cbd5e1;
+  --color-overlay: rgba(255, 255, 255, 0.85);
+  --color-border: #e2e8f0;
+  --color-border-dim: #cbd5e1;
+
+  /* Text */
+  --color-heading: #0f172a;
+  --color-body: #334155;
+  --color-label: #64748b;
+  --color-dim: #94a3b8;
+  --color-faint: #cbd5e1;
+
+  /* Raft state (SVG strokes + bg) */
+  --color-leader: #16a34a;
+  --color-candidate: #ca8a04;
+  --color-follower: #475569;
+  --color-crashed: #dc2626;
+
+  /* Raft state text (on panel bg) */
+  --color-leader-text: #16a34a;
+  --color-candidate-text: #ca8a04;
+  --color-follower-text: #64748b;
+  --color-crashed-text: #dc2626;
+
+  /* RPC messages */
+  --color-rpc-vote: #2563eb;
+  --color-rpc-vote-reply: #60a5fa;
+  --color-rpc-append: #16a34a;
+  --color-rpc-append-reply: #4ade80;
+
+  /* Graph structural */
+  --color-node-fill: #ffffff;
+  --color-node-text: #1e293b;
+  --color-node-term: #64748b;
+  --color-selection: #2563eb;
+  --color-edge: #cbd5e1;
+  --color-edge-partitioned: #dc2626;
+
+  /* Event log */
+  --color-evt-timeout: #ea580c;
+  --color-evt-heartbeat: #16a34a;
+  --color-evt-vote-sent: #2563eb;
+  --color-evt-vote-recv: #3b82f6;
+  --color-evt-msg-drop: #dc2626;
+  --color-evt-term-inc: #9333ea;
+  --color-evt-restored: #2563eb;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--color-surface);
+  color: var(--color-body);
   overflow: hidden;
 }
 

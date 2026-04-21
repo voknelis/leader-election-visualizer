@@ -2,6 +2,7 @@
 import { computed, inject } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
+import { useTheme } from '../../composables/useTheme'
 import type { useScenarioRunner } from '../../composables/useScenarioRunner'
 import ScenarioSelector from './ScenarioSelector.vue'
 import type { Scenario } from '../../types/scenario'
@@ -9,6 +10,7 @@ import type { Scenario } from '../../types/scenario'
 marked.setOptions({ breaks: true, gfm: true })
 
 const stepStore = useStepStore()
+const { isDark } = useTheme()
 const runner = inject<ReturnType<typeof useScenarioRunner>>('scenarioRunner')!
 
 const progressPercent = computed(() => {
@@ -85,37 +87,37 @@ function handleClose() {
   <div class="h-full flex flex-col">
     <!-- No scenario loaded -->
     <div v-if="!stepStore.currentScenario" class="p-4">
-      <h2 class="text-sm font-semibold text-slate-200 mb-3">Step-by-Step Mode</h2>
-      <p class="text-xs text-slate-400 mb-4">Select a scenario to begin a guided walkthrough of Raft leader election.</p>
+      <h2 class="text-sm font-semibold text-body mb-3">Step-by-Step Mode</h2>
+      <p class="text-xs text-label mb-4">Select a scenario to begin a guided walkthrough of Raft leader election.</p>
       <ScenarioSelector @select="handleSelectScenario" />
     </div>
 
     <!-- Scenario active -->
     <div v-else class="flex flex-col h-full">
       <!-- Header -->
-      <div class="p-4 border-b border-slate-700">
+      <div class="p-4 border-b border-border">
         <button
-          class="mb-3 flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded transition-colors"
+          class="mb-3 flex items-center gap-1.5 text-xs text-body hover:text-heading bg-card hover:bg-btn px-2.5 py-1 rounded transition-colors"
           title="Back to scenario list"
           @click="handleClose"
         >
-          <span>←</span>
+          <span>&larr;</span>
           <span>All scenarios</span>
         </button>
-        <h2 class="text-sm font-semibold text-slate-200">{{ stepStore.currentScenario.title }}</h2>
-        <div class="w-full bg-slate-700 rounded-full h-1.5 mt-2">
+        <h2 class="text-sm font-semibold text-body">{{ stepStore.currentScenario.title }}</h2>
+        <div class="w-full bg-card rounded-full h-1.5 mt-2">
           <div
             class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
             :style="{ width: `${progressPercent}%` }"
           />
         </div>
-        <div class="text-xs text-slate-500 mt-1">
+        <div class="text-xs text-dim mt-1">
           Step {{ stepStore.currentStepIndex + 1 }} of {{ stepStore.totalSteps }}
         </div>
       </div>
 
       <!-- Step list -->
-      <div class="border-b border-slate-700 max-h-40 overflow-y-auto">
+      <div class="border-b border-border max-h-40 overflow-y-auto">
         <ol class="text-xs">
           <li
             v-for="(step, idx) in stepStore.currentScenario.steps"
@@ -125,10 +127,10 @@ function handleClose() {
               class="w-full text-left px-4 py-1.5 flex items-center gap-2 transition-colors"
               :class="[
                 idx === stepStore.currentStepIndex
-                  ? 'bg-blue-900/40 text-blue-200'
+                  ? isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
                   : stepStore.visitedSteps.has(idx)
-                    ? 'text-slate-300 hover:bg-slate-700/60'
-                    : 'text-slate-600 cursor-not-allowed',
+                    ? 'text-body hover:bg-card/60'
+                    : 'text-faint cursor-not-allowed',
               ]"
               :disabled="!stepStore.visitedSteps.has(idx) && idx !== stepStore.currentStepIndex"
               :title="!stepStore.visitedSteps.has(idx) && idx !== stepStore.currentStepIndex ? 'Advance through steps to unlock' : 'Jump to step'"
@@ -147,11 +149,12 @@ function handleClose() {
 
       <!-- Step content -->
       <div class="flex-1 p-4 overflow-y-auto">
-        <h3 class="text-base font-semibold text-white mb-2">
+        <h3 class="text-base font-semibold text-heading mb-2">
           {{ stepStore.currentStep?.title }}
         </h3>
         <div
-          class="text-sm text-slate-300 leading-relaxed prose prose-invert prose-sm max-w-none"
+          class="text-sm text-body leading-relaxed prose prose-sm max-w-none"
+          :class="{ 'prose-invert': isDark }"
           v-html="renderedNarration"
         />
       </div>
@@ -159,7 +162,7 @@ function handleClose() {
       <!-- Auto-run status strip (always visible when step has autoRun or condition) -->
       <div
         v-if="showStatusStrip"
-        class="px-4 py-2 border-t border-slate-700 bg-slate-900/40 text-xs text-slate-400"
+        class="px-4 py-2 border-t border-border bg-surface/40 text-xs text-label"
       >
         <div class="flex items-center justify-between mb-1.5 gap-2">
           <span class="flex items-center gap-2 min-w-0">
@@ -169,30 +172,30 @@ function handleClose() {
             />
             <span class="truncate">
               {{ statusStrip.label }}
-              <span v-if="statusStrip.detail" class="text-slate-500">· {{ statusStrip.detail }}</span>
+              <span v-if="statusStrip.detail" class="text-dim">&middot; {{ statusStrip.detail }}</span>
             </span>
           </span>
-          <span v-if="hasAutoRun" class="font-mono text-slate-500 flex-shrink-0">
+          <span v-if="hasAutoRun" class="font-mono text-dim flex-shrink-0">
             {{ autoRunCompleted }} / {{ autoRunTotal }}
           </span>
         </div>
-        <div v-if="hasAutoRun" class="w-full bg-slate-700 rounded-full h-1">
+        <div v-if="hasAutoRun" class="w-full bg-card rounded-full h-1">
           <div
             class="h-1 rounded-full transition-all"
             :class="statusStrip.bar === 'amber'
               ? 'bg-amber-500'
               : statusStrip.bar === 'muted'
-                ? 'bg-slate-500'
-                : 'bg-slate-600/40'"
+                ? 'bg-follower'
+                : 'bg-btn/40'"
             :style="{ width: `${autoRunPercent}%` }"
           />
         </div>
       </div>
 
       <!-- Auto-advance toggle + manual tick + replay -->
-      <div class="px-4 py-2 border-t border-slate-700 bg-slate-900/30">
+      <div class="px-4 py-2 border-t border-border bg-surface/30">
         <div class="flex items-center justify-between gap-3">
-          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none min-w-0">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-body select-none min-w-0">
             <input
               type="checkbox"
               class="accent-blue-500 flex-shrink-0"
@@ -208,29 +211,29 @@ function handleClose() {
               title="Tick once (T)"
               :disabled="tickButtonDisabled"
               @click="runner.tickOnce()"
-            >▶ Tick once</button>
+            >Tick once</button>
             <button
-              class="w-6 h-6 flex items-center justify-center rounded text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600"
+              class="w-6 h-6 flex items-center justify-center rounded text-xs font-medium bg-card text-body hover:bg-btn"
               title="Replay current step (R)"
               @click="runner.replayCurrentStep()"
-            >↻</button>
+            >&olarr;</button>
           </div>
         </div>
       </div>
 
       <!-- Navigation -->
-      <div class="p-4 border-t border-slate-700">
+      <div class="p-4 border-t border-border">
         <div class="flex gap-2">
           <button
-            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-card text-body hover:bg-btn disabled:opacity-30 disabled:cursor-not-allowed"
             :disabled="stepStore.isFirstStep"
             @click="runner.prevStep()"
-          >← Prev</button>
+          >&larr; Prev</button>
           <button
             class="flex-1 px-3 py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
             :disabled="stepStore.isLastStep"
             @click="runner.nextStep()"
-          >Next →</button>
+          >Next &rarr;</button>
         </div>
       </div>
     </div>

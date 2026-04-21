@@ -164,25 +164,25 @@ onUnmounted(() => {
     </svg>
 
     <!-- Legend -->
-    <div class="absolute bottom-4 left-4 bg-slate-800/80 rounded px-3 py-2 text-xs text-slate-400 space-y-1">
+    <div class="absolute bottom-4 left-4 bg-overlay rounded px-3 py-2 text-xs text-label space-y-1">
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> Follower
+        <span class="w-3 h-3 rounded-full bg-follower inline-block"></span> Follower
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span> Candidate
+        <span class="w-3 h-3 rounded-full bg-candidate inline-block"></span> Candidate
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Leader
+        <span class="w-3 h-3 rounded-full bg-leader inline-block"></span> Leader
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Crashed
+        <span class="w-3 h-3 rounded-full bg-crashed inline-block"></span> Crashed
       </div>
-      <div class="mt-2 border-t border-slate-700 pt-1">
+      <div class="mt-2 border-t border-border pt-1">
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> RequestVote
+          <span class="w-3 h-3 rounded-full bg-rpc-vote inline-block"></span> RequestVote
         </div>
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> AppendEntries
+          <span class="w-3 h-3 rounded-full bg-rpc-append inline-block"></span> AppendEntries
         </div>
       </div>
     </div>

@@ -18,11 +18,11 @@ const maxTerm = computed(() =>
 
 function stateColor(state: string): string {
   switch (state) {
-    case 'leader': return 'bg-green-500'
-    case 'candidate': return 'bg-yellow-500'
-    case 'follower': return 'bg-slate-500'
-    case 'crashed': return 'bg-red-500'
-    default: return 'bg-slate-600'
+    case 'leader': return 'bg-leader'
+    case 'candidate': return 'bg-candidate'
+    case 'follower': return 'bg-follower'
+    case 'crashed': return 'bg-crashed'
+    default: return 'bg-btn'
   }
 }
 </script>
@@ -34,15 +34,15 @@ function stateColor(state: string): string {
       :key="node.id"
       class="flex items-center gap-2"
     >
-      <span class="text-xs text-slate-500 w-6">{{ node.id }}</span>
-      <div class="flex-1 bg-slate-700 rounded-full h-2.5 overflow-hidden">
+      <span class="text-xs text-dim w-6">{{ node.id }}</span>
+      <div class="flex-1 bg-card rounded-full h-2.5 overflow-hidden">
         <div
           :class="stateColor(node.state)"
           class="h-full rounded-full transition-all duration-300"
           :style="{ width: `${(node.term / maxTerm) * 100}%` }"
         />
       </div>
-      <span class="text-xs text-slate-400 w-5 text-right">T{{ node.term }}</span>
+      <span class="text-xs text-label w-5 text-right">T{{ node.term }}</span>
     </div>
   </div>
 </template>

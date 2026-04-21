@@ -9,15 +9,15 @@ const emit = defineEmits<{
 
 <template>
   <div class="space-y-2">
-    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Choose Scenario</h3>
+    <h3 class="text-xs font-semibold text-label uppercase tracking-wide">Choose Scenario</h3>
     <button
       v-for="scenario in scenarios"
       :key="scenario.id"
-      class="w-full text-left px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors"
+      class="w-full text-left px-3 py-2 rounded bg-card hover:bg-btn transition-colors"
       @click="emit('select', scenario)"
     >
-      <div class="text-sm font-medium text-white">{{ scenario.title }}</div>
-      <div class="text-xs text-slate-400 mt-0.5">{{ scenario.description }}</div>
+      <div class="text-sm font-medium text-heading">{{ scenario.title }}</div>
+      <div class="text-xs text-label mt-0.5">{{ scenario.description }}</div>
     </button>
   </div>
 </template>

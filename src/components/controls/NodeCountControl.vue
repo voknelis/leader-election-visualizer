@@ -21,15 +21,15 @@ function remove() {
 
 <template>
   <div>
-    <label class="text-xs text-slate-400 block mb-1">Nodes: {{ settings.nodeCount }}</label>
+    <label class="text-xs text-label block mb-1">Nodes: {{ settings.nodeCount }}</label>
     <div class="flex gap-2">
       <button
-        class="flex-1 px-2 py-1 rounded bg-slate-600 text-white text-sm hover:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
+        class="flex-1 px-2 py-1 rounded bg-btn text-heading text-sm hover:bg-btn/80 disabled:opacity-30 disabled:cursor-not-allowed"
         :disabled="settings.nodeCount <= 2"
         @click="remove"
-      >−</button>
+      >&minus;</button>
       <button
-        class="flex-1 px-2 py-1 rounded bg-slate-600 text-white text-sm hover:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
+        class="flex-1 px-2 py-1 rounded bg-btn text-heading text-sm hover:bg-btn/80 disabled:opacity-30 disabled:cursor-not-allowed"
         :disabled="settings.nodeCount >= 9"
         @click="add"
       >+</button>

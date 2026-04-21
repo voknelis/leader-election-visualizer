@@ -16,17 +16,17 @@ const delayMs = computed({
 
 <template>
   <div>
-    <label class="text-xs text-slate-400 block mb-1">Message Delay: {{ delayMs }}ms</label>
+    <label class="text-xs text-label block mb-1">Message Delay: {{ delayMs }}ms</label>
     <input
       type="range"
       min="400"
       max="4000"
       step="200"
       :value="delayMs"
-      class="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-blue-500"
       @input="delayMs = +($event.target as HTMLInputElement).value"
     >
-    <div class="flex justify-between text-[9px] text-slate-500 mt-0.5">
+    <div class="flex justify-between text-[9px] text-dim mt-0.5">
       <span>400ms</span>
       <span>4000ms</span>
     </div>

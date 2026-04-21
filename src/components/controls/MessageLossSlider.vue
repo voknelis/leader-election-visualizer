@@ -12,17 +12,17 @@ const lossPercent = computed({
 
 <template>
   <div>
-    <label class="text-xs text-slate-400 block mb-1">Message Loss: {{ lossPercent }}%</label>
+    <label class="text-xs text-label block mb-1">Message Loss: {{ lossPercent }}%</label>
     <input
       type="range"
       min="0"
       max="100"
       step="5"
       :value="lossPercent"
-      class="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-orange-500"
+      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-orange-500"
       @input="lossPercent = +($event.target as HTMLInputElement).value"
     >
-    <div class="flex justify-between text-[9px] text-slate-500 mt-0.5">
+    <div class="flex justify-between text-[9px] text-dim mt-0.5">
       <span>0%</span>
       <span>100%</span>
     </div>

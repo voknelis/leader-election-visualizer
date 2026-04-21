@@ -18,39 +18,39 @@ function handleReset() {
 
 <template>
   <div class="space-y-4">
-    <h2 class="text-sm font-semibold text-slate-200">Demo Controls</h2>
+    <h2 class="text-sm font-semibold text-body">Demo Controls</h2>
 
     <PauseResumeButton />
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <SpeedSlider />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <NodeCountControl />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <NodeActions />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <PartitionControl />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <MessageDelaySlider />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <MessageLossSlider />
     </div>
 
-    <div class="border-t border-slate-700 pt-3">
+    <div class="border-t border-border pt-3">
       <button
-        class="w-full px-3 py-1.5 rounded bg-slate-600 text-white text-sm hover:bg-slate-500"
+        class="w-full px-3 py-1.5 rounded bg-btn text-heading text-sm hover:bg-btn/80"
         @click="handleReset"
-      >🔄 Reset (new seed)</button>
+      >Reset (new seed)</button>
     </div>
   </div>
 </template>

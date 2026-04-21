@@ -25,7 +25,7 @@ function restoreSelected() {
 
 <template>
   <div v-if="selectedNode">
-    <label class="text-xs text-slate-400 block mb-1">Node {{ selectedNode.id }} Actions</label>
+    <label class="text-xs text-label block mb-1">Node {{ selectedNode.id }} Actions</label>
     <div class="flex gap-2">
       <button
         v-if="selectedNode.state !== NodeState.CRASHED"
@@ -40,6 +40,6 @@ function restoreSelected() {
     </div>
   </div>
   <div v-else>
-    <p class="text-xs text-slate-500 italic">Click a node to select it</p>
+    <p class="text-xs text-dim italic">Click a node to select it</p>
   </div>
 </template>

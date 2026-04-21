@@ -15,11 +15,11 @@ const simStore = useSimulationStore()
 
 const packetColor = computed(() => {
   switch (props.message.payload.type) {
-    case RpcType.REQUEST_VOTE: return '#3b82f6'
-    case RpcType.REQUEST_VOTE_REPLY: return '#93c5fd'
-    case RpcType.APPEND_ENTRIES: return '#22c55e'
-    case RpcType.APPEND_ENTRIES_REPLY: return '#86efac'
-    default: return '#94a3b8'
+    case RpcType.REQUEST_VOTE: return 'var(--color-rpc-vote)'
+    case RpcType.REQUEST_VOTE_REPLY: return 'var(--color-rpc-vote-reply)'
+    case RpcType.APPEND_ENTRIES: return 'var(--color-rpc-append)'
+    case RpcType.APPEND_ENTRIES_REPLY: return 'var(--color-rpc-append-reply)'
+    default: return 'var(--color-label)'
   }
 })
 
@@ -49,7 +49,7 @@ const packetRadius = computed(() => {
     :cx="x"
     :cy="y"
     :r="packetRadius"
-    :fill="packetColor"
+    :style="{ fill: packetColor }"
     :opacity="opacity"
   />
 </template>
