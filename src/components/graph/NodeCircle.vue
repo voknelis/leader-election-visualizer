@@ -10,6 +10,7 @@ const props = defineProps<{
   y: number
   selected: boolean
   dimmed: boolean
+  radius?: number
 }>()
 
 const emit = defineEmits<{
@@ -18,7 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const simStore = useSimulationStore()
-const radius = 32
+const r = computed(() => props.radius ?? 32)
 
 const stateColor = computed(() => {
   switch (props.node.state) {
@@ -44,13 +45,13 @@ function describeArc(ratio: number): string {
   if (ratio <= 0 || ratio > 1) return ''
   const startAngle = -Math.PI / 2
   const endAngle = startAngle + ratio * 2 * Math.PI
-  const r = radius + 6
-  const x1 = r * Math.cos(startAngle)
-  const y1 = r * Math.sin(startAngle)
-  const x2 = r * Math.cos(endAngle)
-  const y2 = r * Math.sin(endAngle)
+  const outer = r.value + 6
+  const x1 = outer * Math.cos(startAngle)
+  const y1 = outer * Math.sin(startAngle)
+  const x2 = outer * Math.cos(endAngle)
+  const y2 = outer * Math.sin(endAngle)
   const largeArc = ratio > 0.5 ? 1 : 0
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
+  return `M ${x1} ${y1} A ${outer} ${outer} 0 ${largeArc} 1 ${x2} ${y2}`
 }
 
 /** Smooth election timeout arc — interpolates with frameFraction */
@@ -83,11 +84,12 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
     class="cursor-grab active:cursor-grabbing"
     @click="emit('click', node.id)"
     @mousedown="emit('mousedown', $event)"
+    @touchstart.stop="emit('click', node.id)"
   >
     <!-- Selection ring -->
     <circle
       v-if="selected"
-      :r="radius + 10"
+      :r="r + 10"
       fill="none"
       :style="{ stroke: 'var(--color-selection)' }"
       stroke-width="2"
@@ -96,7 +98,7 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
 
     <!-- Main circle -->
     <circle
-      :r="radius"
+      :r="r"
       :style="{ fill: 'var(--color-node-fill)', stroke: stateColor }"
       stroke-width="3"
     />
@@ -140,8 +142,8 @@ const opacity = computed(() => props.dimmed ? 0.25 : 1)
 
     <!-- State badge -->
     <text
-      :x="radius - 4"
-      :y="-(radius - 4)"
+      :x="r - 4"
+      :y="-(r - 4)"
       text-anchor="middle"
       :style="{ fill: stateColor }"
       font-size="10"

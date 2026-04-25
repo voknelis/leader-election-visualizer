@@ -7,13 +7,23 @@ export interface NodePosition {
   y: number
 }
 
-const CHARGE_STRENGTH = -1800
 const CHARGE_DISTANCE_MAX = 500
-const COLLISION_RADIUS = 90
 const CENTER_PULL_STRENGTH = 0.06
 const ALPHA_DECAY = 0.05
 const VELOCITY_DECAY = 0.55
 const EDGE_PADDING = 60
+
+function collisionRadius(w: number, h: number) {
+  return Math.min(90, Math.max(35, Math.min(w, h) * 0.18))
+}
+
+function chargeStrength(w: number, h: number) {
+  return Math.min(w, h) < 500 ? -800 : -1800
+}
+
+function spreadRadius(w: number, h: number) {
+  return Math.min(w, h) * (Math.min(w, h) < 500 ? 0.1 : 0.3)
+}
 
 export function useD3Layout(
   nodeIds: () => NodeId[],
@@ -29,6 +39,8 @@ export function useD3Layout(
   let simulation: d3.Simulation<SimNode, never> | null = null
   let nodes: SimNode[] = []
   let currentIdSet = ''
+  let prevW = 800
+  let prevH = 600
 
   function createSimulation() {
     const w = width()
@@ -36,8 +48,8 @@ export function useD3Layout(
 
     simulation = d3.forceSimulation<SimNode>(nodes)
       .force('center', d3.forceCenter(w / 2, h / 2))
-      .force('charge', d3.forceManyBody().strength(CHARGE_STRENGTH).distanceMax(CHARGE_DISTANCE_MAX))
-      .force('collide', d3.forceCollide(COLLISION_RADIUS).strength(1).iterations(2))
+      .force('charge', d3.forceManyBody().strength(chargeStrength(w, h)).distanceMax(CHARGE_DISTANCE_MAX))
+      .force('collide', d3.forceCollide(collisionRadius(w, h)).strength(1).iterations(2))
       .force('x', d3.forceX(w / 2).strength(CENTER_PULL_STRENGTH))
       .force('y', d3.forceY(h / 2).strength(CENTER_PULL_STRENGTH))
       .alphaDecay(ALPHA_DECAY)
@@ -69,16 +81,16 @@ export function useD3Layout(
     // Place new nodes in a circle around center
     const totalCount = ids.length
     let newIdx = 0
+    const sr = spreadRadius(w, h)
 
     nodes = ids.map((id, i) => {
       if (existing.has(id)) return existing.get(id)!
       const angle = (2 * Math.PI * i) / totalCount - Math.PI / 2
-      const spreadRadius = Math.min(w, h) * 0.3
       newIdx++
       return {
         id,
-        x: w / 2 + spreadRadius * Math.cos(angle),
-        y: h / 2 + spreadRadius * Math.sin(angle),
+        x: w / 2 + sr * Math.cos(angle),
+        y: h / 2 + sr * Math.sin(angle),
       }
     })
 
@@ -94,11 +106,21 @@ export function useD3Layout(
     if (simulation) {
       const w = width()
       const h = height()
+      // Proportionally reposition nodes from previous canvas size to new size
+      for (const node of nodes) {
+        if (node.x !== undefined) node.x = w / 2 + (node.x - prevW / 2) * (w / prevW)
+        if (node.y !== undefined) node.y = h / 2 + (node.y - prevH / 2) * (h / prevH)
+      }
+      prevW = w
+      prevH = h
       simulation
+        .nodes(nodes)
         .force('center', d3.forceCenter(w / 2, h / 2))
         .force('x', d3.forceX(w / 2).strength(CENTER_PULL_STRENGTH))
         .force('y', d3.forceY(h / 2).strength(CENTER_PULL_STRENGTH))
-      simulation.alpha(0.3).restart()
+        .force('charge', d3.forceManyBody().strength(chargeStrength(w, h)).distanceMax(CHARGE_DISTANCE_MAX))
+        .force('collide', d3.forceCollide(collisionRadius(w, h)).strength(1).iterations(2))
+      simulation.alpha(0.8).restart()
     }
   }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { marked } from 'marked'
 import { useStepStore } from '../../stores/stepStore'
 import { useTheme } from '../../composables/useTheme'
@@ -73,6 +73,8 @@ const statusStrip = computed<StripState>(() => {
   return { label: 'Waiting for condition…', detail: '', bar: 'none', pulse: true }
 })
 
+const mobileStepTab = ref<'description' | 'steps'>('description')
+
 function handleSelectScenario(scenario: Scenario) {
   runner.loadScenario(scenario)
 }
@@ -86,7 +88,7 @@ function handleClose() {
 <template>
   <div class="h-full flex flex-col">
     <!-- No scenario loaded -->
-    <div v-if="!stepStore.currentScenario" class="p-4">
+    <div v-if="!stepStore.currentScenario" class="p-4 overflow-y-auto flex-1">
       <h2 class="text-sm font-semibold text-body mb-3">Step-by-Step Mode</h2>
       <p class="text-xs text-label mb-4">Select a scenario to begin a guided walkthrough of Raft leader election.</p>
       <ScenarioSelector @select="handleSelectScenario" />
@@ -94,8 +96,8 @@ function handleClose() {
 
     <!-- Scenario active -->
     <div v-else class="flex flex-col h-full">
-      <!-- Header -->
-      <div class="p-4 border-b border-border">
+      <!-- Header (desktop only — mobile shows mini-header in App.vue above graph) -->
+      <div class="hidden md:block p-4 border-b border-border">
         <button
           class="mb-3 flex items-center gap-1.5 text-xs text-body hover:text-heading bg-card hover:bg-btn px-2.5 py-1 rounded transition-colors"
           title="Back to scenario list"
@@ -116,8 +118,22 @@ function handleClose() {
         </div>
       </div>
 
-      <!-- Step list -->
-      <div class="border-b border-border max-h-40 overflow-y-auto">
+      <!-- Mobile tab bar: Description | Steps -->
+      <div class="md:hidden flex shrink-0 border-b border-border">
+        <button
+          class="flex-1 py-2 text-xs font-medium transition-colors border-b-2 -mb-px"
+          :class="mobileStepTab === 'description' ? 'border-blue-500 text-blue-500' : 'border-transparent text-label'"
+          @click="mobileStepTab = 'description'"
+        >Description</button>
+        <button
+          class="flex-1 py-2 text-xs font-medium transition-colors border-b-2 -mb-px"
+          :class="mobileStepTab === 'steps' ? 'border-blue-500 text-blue-500' : 'border-transparent text-label'"
+          @click="mobileStepTab = 'steps'"
+        >Steps</button>
+      </div>
+
+      <!-- Step list (desktop only — shown as tab on mobile) -->
+      <div class="hidden md:block border-b border-border max-h-40 overflow-y-auto">
         <ol class="text-xs">
           <li
             v-for="(step, idx) in stepStore.currentScenario.steps"
@@ -147,16 +163,53 @@ function handleClose() {
         </ol>
       </div>
 
-      <!-- Step content -->
-      <div class="flex-1 p-4 overflow-y-auto">
-        <h3 class="text-base font-semibold text-heading mb-2">
-          {{ stepStore.currentStep?.title }}
-        </h3>
+      <!-- Step content (flex-1 scrollable: narration on desktop always; tabbed on mobile) -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- Narration: always visible on desktop; visible on mobile when description tab -->
         <div
-          class="text-sm text-body leading-relaxed prose prose-sm max-w-none"
-          :class="{ 'prose-invert': isDark }"
-          v-html="renderedNarration"
-        />
+          class="p-4"
+          :class="{ 'hidden md:block': mobileStepTab !== 'description' }"
+        >
+          <h3 class="text-base font-semibold text-heading mb-2">
+            {{ stepStore.currentStep?.title }}
+          </h3>
+          <div
+            class="text-sm text-body leading-relaxed prose prose-sm max-w-none"
+            :class="{ 'prose-invert': isDark }"
+            v-html="renderedNarration"
+          />
+        </div>
+        <!-- Step list: visible on mobile when steps tab; hidden on desktop (shown above) -->
+        <ol
+          class="text-xs md:hidden"
+          :class="{ 'hidden': mobileStepTab !== 'steps' }"
+        >
+          <li
+            v-for="(step, idx) in stepStore.currentScenario!.steps"
+            :key="step.id"
+          >
+            <button
+              class="w-full text-left px-4 py-1.5 flex items-center gap-2 transition-colors"
+              :class="[
+                idx === stepStore.currentStepIndex
+                  ? isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
+                  : stepStore.visitedSteps.has(idx)
+                    ? 'text-body hover:bg-card/60'
+                    : 'text-faint cursor-not-allowed',
+              ]"
+              :disabled="!stepStore.visitedSteps.has(idx) && idx !== stepStore.currentStepIndex"
+              :title="!stepStore.visitedSteps.has(idx) && idx !== stepStore.currentStepIndex ? 'Advance through steps to unlock' : 'Jump to step'"
+              @click="runner.jumpToStep(idx)"
+            >
+              <span class="w-5 text-center font-mono">{{ idx + 1 }}</span>
+              <span class="flex-1 truncate">{{ step.title }}</span>
+              <span
+                v-if="idx === stepStore.currentStepIndex"
+                class="text-[10px] uppercase tracking-wide text-blue-400"
+              >now</span>
+            </button>
+          </li>
+        </ol>
       </div>
 
       <!-- Auto-run status strip (always visible when step has autoRun or condition) -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { select, zoom, type ZoomBehavior } from 'd3'
 import { useSimulationStore } from '../../stores/simulationStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useD3Layout } from '../../composables/useD3Layout'
@@ -14,6 +15,15 @@ const svgRef = ref<SVGSVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const width = ref(800)
 const height = ref(600)
+
+const panZoom = ref({ x: 0, y: 0, k: 1 })
+const transformAttr = computed(() =>
+  `translate(${panZoom.value.x},${panZoom.value.y}) scale(${panZoom.value.k})`
+)
+const nodeRadius = computed(() => (width.value < 550 ? 22 : 32))
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let zoomBehavior: ZoomBehavior<SVGSVGElement, any> | null = null
 
 const nodeIds = computed(() => [...simStore.nodes.keys()])
 
@@ -38,13 +48,16 @@ function toSvgCoords(e: MouseEvent): { x: number; y: number } {
   const ctm = svg.getScreenCTM()
   if (!ctm) return { x: e.clientX, y: e.clientY }
   const svgPt = pt.matrixTransform(ctm.inverse())
-  return { x: svgPt.x, y: svgPt.y }
+  // Convert from SVG space to <g> (simulation) space accounting for pan/zoom
+  const t = panZoom.value
+  return { x: (svgPt.x - t.x) / t.k, y: (svgPt.y - t.y) / t.k }
 }
 
 let pendingDragId: string | null = null
 
 function handleNodeMousedown(id: string, e: MouseEvent) {
   e.preventDefault()
+  e.stopPropagation() // prevent D3 zoom from intercepting this as a pan
   dragging.value = true
   dragMoved = false
   dragStartX = e.clientX
@@ -110,6 +123,15 @@ function handleResize() {
 onMounted(() => {
   handleResize()
   window.addEventListener('resize', handleResize)
+
+  if (svgRef.value) {
+    zoomBehavior = zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.2, 4])
+      .on('zoom', (event) => {
+        panZoom.value = { x: event.transform.x, y: event.transform.y, k: event.transform.k }
+      })
+    select(svgRef.value).call(zoomBehavior)
+  }
 })
 
 onUnmounted(() => {
@@ -123,44 +145,48 @@ onUnmounted(() => {
       ref="svgRef"
       :width="width"
       :height="height"
-      class="w-full h-full"
+      class="w-full h-full touch-none"
       @mousemove="handleMousemove"
       @mouseup="handleMouseup"
       @mouseleave="handleMouseup"
     >
-      <!-- Edges -->
-      <EdgeLine
-        v-for="edge in edges"
-        :key="`${edge.from}-${edge.to}`"
-        :x1="positions.get(edge.from)?.x ?? 0"
-        :y1="positions.get(edge.from)?.y ?? 0"
-        :x2="positions.get(edge.to)?.x ?? 0"
-        :y2="positions.get(edge.to)?.y ?? 0"
-        :partitioned="isPartitioned(edge.from, edge.to)"
-      />
+      <!-- Pan/zoom group: all graph content transforms together -->
+      <g :transform="transformAttr">
+        <!-- Edges -->
+        <EdgeLine
+          v-for="edge in edges"
+          :key="`${edge.from}-${edge.to}`"
+          :x1="positions.get(edge.from)?.x ?? 0"
+          :y1="positions.get(edge.from)?.y ?? 0"
+          :x2="positions.get(edge.to)?.x ?? 0"
+          :y2="positions.get(edge.to)?.y ?? 0"
+          :partitioned="isPartitioned(edge.from, edge.to)"
+        />
 
-      <!-- Messages in flight (skip if either endpoint was removed) -->
-      <MessagePacket
-        v-for="msg in simStore.messages"
-        v-show="positions.has(msg.from) && positions.has(msg.to)"
-        :key="msg.id"
-        :message="msg"
-        :from-pos="positions.get(msg.from) ?? { x: 0, y: 0 }"
-        :to-pos="positions.get(msg.to) ?? { x: 0, y: 0 }"
-      />
+        <!-- Messages in flight (skip if either endpoint was removed) -->
+        <MessagePacket
+          v-for="msg in simStore.messages"
+          v-show="positions.has(msg.from) && positions.has(msg.to)"
+          :key="msg.id"
+          :message="msg"
+          :from-pos="positions.get(msg.from) ?? { x: 0, y: 0 }"
+          :to-pos="positions.get(msg.to) ?? { x: 0, y: 0 }"
+        />
 
-      <!-- Nodes -->
-      <NodeCircle
-        v-for="[id, node] in simStore.nodes"
-        :key="id"
-        :node="node"
-        :x="positions.get(id)?.x ?? 0"
-        :y="positions.get(id)?.y ?? 0"
-        :selected="ui.selectedNodeId === id"
-        :dimmed="ui.highlightedNodes.length > 0 && !ui.highlightedNodes.includes(id)"
-        @click="handleNodeClick(id)"
-        @mousedown="handleNodeMousedown(id, $event)"
-      />
+        <!-- Nodes -->
+        <NodeCircle
+          v-for="[id, node] in simStore.nodes"
+          :key="id"
+          :node="node"
+          :x="positions.get(id)?.x ?? 0"
+          :y="positions.get(id)?.y ?? 0"
+          :radius="nodeRadius"
+          :selected="ui.selectedNodeId === id"
+          :dimmed="ui.highlightedNodes.length > 0 && !ui.highlightedNodes.includes(id)"
+          @click="handleNodeClick(id)"
+          @mousedown="handleNodeMousedown(id, $event)"
+        />
+      </g>
     </svg>
 
     <!-- Legend -->
