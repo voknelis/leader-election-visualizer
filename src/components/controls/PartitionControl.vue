@@ -42,14 +42,14 @@ function healPartition() {
         >
       </div>
       <button
-        class="w-full px-2 py-1 rounded bg-red-700 text-white text-sm hover:bg-red-600"
+        class="w-full px-2 py-1 rounded bg-crashed/80 text-white text-sm hover:bg-crashed"
         @click="applyPartition"
       >Split Network</button>
     </div>
     <div v-else class="space-y-2">
       <p class="text-xs text-crashed-text">Network partitioned</p>
       <button
-        class="w-full px-2 py-1 rounded bg-green-700 text-white text-sm hover:bg-green-600"
+        class="w-full px-2 py-1 rounded bg-leader/80 text-white text-sm hover:bg-leader"
         @click="healPartition"
       >Heal Partition</button>
     </div>

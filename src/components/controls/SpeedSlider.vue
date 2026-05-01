@@ -13,7 +13,7 @@ const speeds = [0.25, 0.5, 1, 2, 4, 8]
       :min="0"
       :max="speeds.length - 1"
       :value="speeds.indexOf(settings.speedMultiplier)"
-      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-blue-500"
+      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-accent"
       @input="settings.speedMultiplier = speeds[+($event.target as HTMLInputElement).value]"
     >
     <div class="flex justify-between text-[9px] text-dim mt-0.5">

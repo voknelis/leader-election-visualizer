@@ -19,7 +19,7 @@ const lossPercent = computed({
       max="100"
       step="5"
       :value="lossPercent"
-      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-orange-500"
+      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-candidate"
       @input="lossPercent = +($event.target as HTMLInputElement).value"
     >
     <div class="flex justify-between text-[9px] text-dim mt-0.5">

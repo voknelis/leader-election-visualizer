@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
 import { marked } from 'marked'
+import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-vue-next'
 import { useStepStore } from '../../stores/stepStore'
 import { useTheme } from '../../composables/useTheme'
 import type { useScenarioRunner } from '../../composables/useScenarioRunner'
@@ -103,13 +104,13 @@ function handleClose() {
           title="Back to scenario list"
           @click="handleClose"
         >
-          <span>&larr;</span>
+          <ArrowLeft :size="12" />
           <span>All scenarios</span>
         </button>
         <h2 class="text-sm font-semibold text-body">{{ stepStore.currentScenario.title }}</h2>
         <div class="w-full bg-card rounded-full h-1.5 mt-2">
           <div
-            class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+            class="bg-accent h-1.5 rounded-full transition-all duration-300"
             :style="{ width: `${progressPercent}%` }"
           />
         </div>
@@ -122,12 +123,12 @@ function handleClose() {
       <div class="md:hidden flex shrink-0 border-b border-border">
         <button
           class="flex-1 py-2 text-xs font-medium transition-colors border-b-2 -mb-px"
-          :class="mobileStepTab === 'description' ? 'border-blue-500 text-blue-500' : 'border-transparent text-label'"
+          :class="mobileStepTab === 'description' ? 'border-accent text-accent' : 'border-transparent text-label'"
           @click="mobileStepTab = 'description'"
         >Description</button>
         <button
           class="flex-1 py-2 text-xs font-medium transition-colors border-b-2 -mb-px"
-          :class="mobileStepTab === 'steps' ? 'border-blue-500 text-blue-500' : 'border-transparent text-label'"
+          :class="mobileStepTab === 'steps' ? 'border-accent text-accent' : 'border-transparent text-label'"
           @click="mobileStepTab = 'steps'"
         >Steps</button>
       </div>
@@ -143,7 +144,7 @@ function handleClose() {
               class="w-full text-left px-4 py-1.5 flex items-center gap-2 transition-colors"
               :class="[
                 idx === stepStore.currentStepIndex
-                  ? isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
+                  ? 'bg-accent/15 text-accent'
                   : stepStore.visitedSteps.has(idx)
                     ? 'text-body hover:bg-card/60'
                     : 'text-faint cursor-not-allowed',
@@ -156,7 +157,7 @@ function handleClose() {
               <span class="flex-1 truncate">{{ step.title }}</span>
               <span
                 v-if="idx === stepStore.currentStepIndex"
-                class="text-[10px] uppercase tracking-wide text-blue-400"
+                class="text-[10px] uppercase tracking-wide text-accent"
               >now</span>
             </button>
           </li>
@@ -192,7 +193,7 @@ function handleClose() {
               class="w-full text-left px-4 py-1.5 flex items-center gap-2 transition-colors"
               :class="[
                 idx === stepStore.currentStepIndex
-                  ? isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
+                  ? 'bg-accent/15 text-accent'
                   : stepStore.visitedSteps.has(idx)
                     ? 'text-body hover:bg-card/60'
                     : 'text-faint cursor-not-allowed',
@@ -205,7 +206,7 @@ function handleClose() {
               <span class="flex-1 truncate">{{ step.title }}</span>
               <span
                 v-if="idx === stepStore.currentStepIndex"
-                class="text-[10px] uppercase tracking-wide text-blue-400"
+                class="text-[10px] uppercase tracking-wide text-accent"
               >now</span>
             </button>
           </li>
@@ -221,7 +222,7 @@ function handleClose() {
           <span class="flex items-center gap-2 min-w-0">
             <span
               v-if="statusStrip.pulse"
-              class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0"
+              class="inline-block w-2 h-2 rounded-full bg-candidate animate-pulse flex-shrink-0"
             />
             <span class="truncate">
               {{ statusStrip.label }}
@@ -236,7 +237,7 @@ function handleClose() {
           <div
             class="h-1 rounded-full transition-all"
             :class="statusStrip.bar === 'amber'
-              ? 'bg-amber-500'
+              ? 'bg-candidate'
               : statusStrip.bar === 'muted'
                 ? 'bg-follower'
                 : 'bg-btn/40'"
@@ -251,7 +252,7 @@ function handleClose() {
           <label class="flex items-center gap-2 cursor-pointer text-xs text-body select-none min-w-0">
             <input
               type="checkbox"
-              class="accent-blue-500 flex-shrink-0"
+              class="accent-accent flex-shrink-0"
               :checked="stepStore.autoAdvance"
               @change="stepStore.autoAdvance = ($event.target as HTMLInputElement).checked"
             />
@@ -260,7 +261,7 @@ function handleClose() {
           <div class="flex items-center gap-2 flex-shrink-0">
             <button
               v-if="!stepStore.autoAdvance && showStatusStrip"
-              class="px-2.5 py-1 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-30 disabled:cursor-not-allowed"
+              class="px-2.5 py-1 rounded text-xs font-medium bg-candidate text-white hover:bg-candidate/80 disabled:opacity-30 disabled:cursor-not-allowed"
               title="Tick once (T)"
               :disabled="tickButtonDisabled"
               @click="runner.tickOnce()"
@@ -269,7 +270,7 @@ function handleClose() {
               class="w-6 h-6 flex items-center justify-center rounded text-xs font-medium bg-card text-body hover:bg-btn"
               title="Replay current step (R)"
               @click="runner.replayCurrentStep()"
-            >&olarr;</button>
+            ><RotateCcw :size="14" /></button>
           </div>
         </div>
       </div>
@@ -278,15 +279,15 @@ function handleClose() {
       <div class="p-4 border-t border-border">
         <div class="flex gap-2">
           <button
-            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-card text-body hover:bg-btn disabled:opacity-30 disabled:cursor-not-allowed"
+            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-card text-body hover:bg-btn disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             :disabled="stepStore.isFirstStep"
             @click="runner.prevStep()"
-          >&larr; Prev</button>
+          ><ChevronLeft :size="14" /> Prev</button>
           <button
-            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="flex-1 px-3 py-2 rounded text-sm font-medium bg-accent text-white hover:bg-accent/80 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             :disabled="stepStore.isLastStep"
             @click="runner.nextStep()"
-          >Next &rarr;</button>
+          >Next <ChevronRight :size="14" /></button>
         </div>
       </div>
     </div>

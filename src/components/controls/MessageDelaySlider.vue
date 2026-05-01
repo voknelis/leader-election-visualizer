@@ -23,7 +23,7 @@ const delayMs = computed({
       max="4000"
       step="200"
       :value="delayMs"
-      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-blue-500"
+      class="w-full h-1.5 bg-btn rounded-lg appearance-none cursor-pointer accent-accent"
       @input="delayMs = +($event.target as HTMLInputElement).value"
     >
     <div class="flex justify-between text-[9px] text-dim mt-0.5">

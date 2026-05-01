@@ -29,12 +29,12 @@ function restoreSelected() {
     <div class="flex gap-2">
       <button
         v-if="selectedNode.state !== NodeState.CRASHED"
-        class="flex-1 px-2 py-1 rounded bg-red-700 text-white text-xs hover:bg-red-600"
+        class="flex-1 px-2 py-1 rounded bg-crashed/80 text-white text-xs hover:bg-crashed"
         @click="crashSelected"
       >Kill</button>
       <button
         v-if="selectedNode.state === NodeState.CRASHED"
-        class="flex-1 px-2 py-1 rounded bg-green-700 text-white text-xs hover:bg-green-600"
+        class="flex-1 px-2 py-1 rounded bg-leader/80 text-white text-xs hover:bg-leader"
         @click="restoreSelected"
       >Restore</button>
     </div>
