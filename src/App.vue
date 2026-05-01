@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, provide } from 'vue'
+import { ArrowLeft } from 'lucide-vue-next'
 import { useSimulation } from './composables/useSimulation'
 import { useUiStore } from './stores/uiStore'
 import { useStepStore } from './stores/stepStore'
@@ -11,6 +12,7 @@ import MessageLog from './components/inspector/MessageLog.vue'
 import TermTimeline from './components/inspector/TermTimeline.vue'
 import TopBar from './components/layout/TopBar.vue'
 import BottomDock from './components/layout/BottomDock.vue'
+import MobileTabBar from './components/layout/MobileTabBar.vue'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { useScenarioRunner } from './composables/useScenarioRunner'
 import { useModeSessions } from './composables/useModeSessions'
@@ -70,24 +72,7 @@ onMounted(() => {
         </div>
       </main>
 
-      <!-- Mobile tab bar -->
-      <nav class="flex md:hidden shrink-0 border-t border-border bg-panel">
-        <button
-          class="flex-1 py-2.5 text-xs font-medium transition-colors"
-          :class="ui.mobileTab === 'controls' ? 'text-accent' : 'text-label'"
-          @click="ui.mobileTab = 'controls'"
-        >Controls</button>
-        <button
-          class="flex-1 py-2.5 text-xs font-medium transition-colors"
-          :class="ui.mobileTab === 'graph' ? 'text-accent' : 'text-label'"
-          @click="ui.mobileTab = 'graph'"
-        >Graph</button>
-        <button
-          class="flex-1 py-2.5 text-xs font-medium transition-colors"
-          :class="ui.mobileTab === 'inspector' ? 'text-accent' : 'text-label'"
-          @click="ui.mobileTab = 'inspector'"
-        >Inspector</button>
-      </nav>
+      <MobileTabBar />
     </template>
 
     <!-- STEP-BY-STEP MODE -->
@@ -100,7 +85,7 @@ onMounted(() => {
         <button
           class="shrink-0 text-xs text-body bg-card hover:bg-btn px-2 py-1 rounded transition-colors"
           @click="runner.cancelAllTimers(); stepStore.currentScenario = null"
-        >&larr; All</button>
+        ><ArrowLeft :size="12" class="inline" /> All</button>
         <div class="flex-1 min-w-0">
           <div class="text-xs font-medium text-body truncate">{{ stepStore.currentScenario.title }}</div>
           <div class="flex items-center gap-2 mt-1">
