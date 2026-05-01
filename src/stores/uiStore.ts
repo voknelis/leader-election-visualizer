@@ -5,6 +5,8 @@ import router from '../router'
 
 export type AppMode = 'demo' | 'step-by-step'
 
+export type MobileTab = 'controls' | 'graph' | 'inspector'
+
 export const useUiStore = defineStore('ui', () => {
   const mode = computed<AppMode>(() =>
     router.currentRoute.value.path === '/learning' ? 'step-by-step' : 'demo',
@@ -14,6 +16,8 @@ export const useUiStore = defineStore('ui', () => {
   const highlightedNodes = ref<NodeId[]>([])
   const showInspector = ref(false)
   const showEventLog = ref(true)
+  const bottomDockCollapsed = ref(false)
+  const mobileTab = ref<MobileTab>('graph')
 
   function selectNode(id: NodeId | null) {
     selectedNodeId.value = id
@@ -22,6 +26,10 @@ export const useUiStore = defineStore('ui', () => {
 
   function togglePause() {
     isPaused.value = !isPaused.value
+  }
+
+  function toggleBottomDock() {
+    bottomDockCollapsed.value = !bottomDockCollapsed.value
   }
 
   function setMode(m: AppMode) {
@@ -38,8 +46,11 @@ export const useUiStore = defineStore('ui', () => {
     highlightedNodes,
     showInspector,
     showEventLog,
+    bottomDockCollapsed,
+    mobileTab,
     selectNode,
     togglePause,
+    toggleBottomDock,
     setMode,
   }
 })
