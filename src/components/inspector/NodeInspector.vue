@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { X } from 'lucide-vue-next'
 import { useUiStore } from '../../stores/uiStore'
 import { useSimulationStore } from '../../stores/simulationStore'
 
@@ -27,9 +28,9 @@ const stateColorClass = computed(() => {
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-semibold text-heading">{{ node.id }}</h3>
       <button
-        class="text-xs text-dim hover:text-body"
+        class="text-dim hover:text-body transition-colors"
         @click="ui.selectNode(null)"
-      >&#10005;</button>
+      ><X :size="14" /></button>
     </div>
 
     <div class="grid grid-cols-2 gap-2 text-xs">

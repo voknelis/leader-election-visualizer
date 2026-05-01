@@ -7,6 +7,7 @@ import { useD3Layout } from '../../composables/useD3Layout'
 import NodeCircle from './NodeCircle.vue'
 import EdgeLine from './EdgeLine.vue'
 import MessagePacket from './MessagePacket.vue'
+import NodePopup from './NodePopup.vue'
 
 const simStore = useSimulationStore()
 const ui = useUiStore()
@@ -120,6 +121,21 @@ function handleResize() {
   }
 }
 
+const popupStyle = computed(() => {
+  if (!ui.selectedNodeId) return null
+  const pos = positions.value.get(ui.selectedNodeId)
+  if (!pos) return null
+  const t = panZoom.value
+  const screenX = pos.x * t.k + t.x
+  const screenY = pos.y * t.k + t.y
+  const r = nodeRadius.value * t.k
+  return {
+    position: 'absolute' as const,
+    left: `${screenX + r + 16}px`,
+    top: `${screenY - 40}px`,
+  }
+})
+
 onMounted(() => {
   handleResize()
   window.addEventListener('resize', handleResize)
@@ -211,6 +227,15 @@ onUnmounted(() => {
           <span class="w-3 h-3 rounded-full bg-rpc-append inline-block"></span> AppendEntries
         </div>
       </div>
+    </div>
+
+    <!-- NodePopup (desktop demo mode) -->
+    <div
+      v-if="popupStyle && ui.mode === 'demo'"
+      :style="popupStyle"
+      class="hidden md:block z-10"
+    >
+      <NodePopup />
     </div>
   </div>
 </template>

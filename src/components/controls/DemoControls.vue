@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue'
+import { RotateCcw } from 'lucide-vue-next'
 import type { useSimulation } from '../../composables/useSimulation'
 import SpeedSlider from './SpeedSlider.vue'
 import MessageDelaySlider from './MessageDelaySlider.vue'
@@ -48,9 +49,12 @@ function handleReset() {
 
     <div class="border-t border-border pt-3">
       <button
-        class="w-full px-3 py-1.5 rounded bg-btn text-heading text-sm hover:bg-btn/80"
+        class="w-full px-3 py-1.5 rounded bg-btn text-heading text-sm hover:bg-btn/80 flex items-center justify-center gap-2"
         @click="handleReset"
-      >Reset (new seed)</button>
+      >
+        <RotateCcw :size="14" />
+        Reset
+      </button>
     </div>
   </div>
 </template>
