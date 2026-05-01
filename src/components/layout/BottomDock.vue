@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { inject } from 'vue'
 import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-vue-next'
 import { useUiStore } from '../../stores/uiStore'
 import { useSimulationStore } from '../../stores/simulationStore'
-import type { useSimulation } from '../../composables/useSimulation'
 import SpeedSlider from '../controls/SpeedSlider.vue'
 import MessageDelaySlider from '../controls/MessageDelaySlider.vue'
 import MessageLossSlider from '../controls/MessageLossSlider.vue'
@@ -14,7 +12,6 @@ import MessageLog from '../inspector/MessageLog.vue'
 
 const ui = useUiStore()
 const simStore = useSimulationStore()
-const sim = inject<ReturnType<typeof useSimulation>>('simulation')!
 
 function clearLog() {
   simStore.eventHistory.length = 0
